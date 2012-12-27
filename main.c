@@ -32,6 +32,7 @@
 #include "string.h"
 
 #include "config.h"
+#include "comm.h"
 #include "radio.h"
 
 /*
@@ -44,7 +45,7 @@ static msg_t Thread1(void *arg) {
   (void)arg;
   chRegSetThreadName("blinker");
   while (TRUE) {
-	//chprintf((BaseChannel *)&SD2, "Frame lost count: %d\r\n", radioData.frameLostCount);
+	/*
 	chprintf((BaseChannel *)&SD2, "Frame count: %d\r\n", radioData.frameCount);
 	chprintf((BaseChannel *)&SD2, "Link quality: %f\r\n", radioData.quality);
 	chprintf((BaseChannel *)&SD2, "Last update: %d\r\n", radioData.lastUpdate);
@@ -55,20 +56,35 @@ static msg_t Thread1(void *arg) {
 	chprintf((BaseChannel *)&SD2, "Channel 5: %d\r\n", radioData.channels[4]);
 	chprintf((BaseChannel *)&SD2, "Channel 6: %d\r\n", radioData.channels[5]);
 	chprintf((BaseChannel *)&SD2, "Channel 7: %d\r\n", radioData.channels[6]);
+	*/
 
 	//palSetPad(GPIOD, GPIOD_LED3);       /* Orange */
     palSetPad(GPIOD, GPIOD_LED4);       /* Green  */
-    palSetPad(GPIOD, GPIOD_LED5);       /* Red    */
-    palSetPad(GPIOD, GPIOD_LED6);       /* Blue   */
+    //palSetPad(GPIOD, GPIOD_LED5);       /* Red    */
+    //palSetPad(GPIOD, GPIOD_LED6);       /* Blue   */
     chThdSleepMilliseconds(500);
     //palClearPad(GPIOD, GPIOD_LED3);     /* Orange */
     palClearPad(GPIOD, GPIOD_LED4);     /* Green  */
-    palClearPad(GPIOD, GPIOD_LED5);     /* Red    */
-    palClearPad(GPIOD, GPIOD_LED6);     /* Blue   */
+    //palClearPad(GPIOD, GPIOD_LED5);     /* Red    */
+    //palClearPad(GPIOD, GPIOD_LED6);     /* Blue   */
     chThdSleepMilliseconds(500);
   }
 
   return 0;
+}
+
+static u32 random_int(void) {
+  static u32 last_value=0;
+  static u32 new_value=0;
+  u32 error_bits = 0;
+  error_bits = RNG_SR_SEIS | RNG_SR_CEIS;
+  while (new_value==last_value) {
+    /* Check for error flags and if data is ready. */
+    if ( ((RNG->SR & error_bits) == 0) && ( (RNG->SR & RNG_SR_DRDY) == 1 ) )
+      new_value=RNG->DR;
+  }
+  last_value=new_value;
+  return new_value;
 }
 
 /*
@@ -86,6 +102,7 @@ int main(void) {
   halInit();
   chSysInit();
 
+  /*
   const SerialConfig outputPortConfig = {
               115200,
               0,
@@ -97,13 +114,25 @@ int main(void) {
   palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(7)); //TX
   palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7)); //RX
   chprintf((BaseChannel *)&SD2, "TrunetCopter v0.2\r\n");
+  */
 
+  // Init hardware random number generator
+  //RNG_CR |= RNG_CR_IE;
+  //RNG_CR |= RNG_CR_EN;
+  rccEnableAHB2(RCC_AHB2ENR_RNGEN, 0);
+  RNG->CR |= RNG_CR_IE;
+  RNG->CR |= RNG_CR_RNGEN;
+  
+  u32 rnd;
+  rnd = random_int();
+  
   /*
    * Creates the example thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
   configInit();
+  mavlinkInit();
   radioInit();
 
   /*

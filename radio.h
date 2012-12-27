@@ -10,7 +10,7 @@
 #define RADIO_STACK_SIZE	128
 #define RADIO_PRIORITY		NORMALPRIO+1 //25
 
-#define RADIO_THROT     radioData.channels[(int)p[RADIO_THRO_CH]]
+#define RADIO_THROT		radioData.channels[(int)p[RADIO_THRO_CH]]
 #define RADIO_ROLL		radioData.channels[(int)p[RADIO_ROLL_CH]]
 #define RADIO_PITCH		radioData.channels[(int)p[RADIO_PITC_CH]]
 #define RADIO_RUDD		radioData.channels[(int)p[RADIO_RUDD_CH]]

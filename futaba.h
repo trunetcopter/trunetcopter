@@ -4,6 +4,7 @@
 #include "ch.h"
 
 #define FUTABA_BAUD		100000
+#define FUTABA_SERIAL_DEVICE	SD1
 
 #define FUTABA_START_CHAR	0x0f
 #define FUTABA_END_CHAR		0x00

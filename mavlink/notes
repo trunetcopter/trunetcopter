@@ -1,0 +1,10 @@
+Validating /home/wsartori/src/mavlink/message_definitions/v1.0/common.xml
+Parsing /home/wsartori/src/mavlink/message_definitions/v1.0/common.xml
+Note: message GPS_STATUS is longer than 64 bytes long (109 bytes), which can cause fragmentation since many radio modems use 64 bytes as maximum air transfer unit.
+Note: message HIGHRES_IMU is longer than 64 bytes long (70 bytes), which can cause fragmentation since many radio modems use 64 bytes as maximum air transfer unit.
+Note: message FILE_TRANSFER_START is longer than 64 bytes long (262 bytes), which can cause fragmentation since many radio modems use 64 bytes as maximum air transfer unit.
+Note: message FILE_TRANSFER_DIR_LIST is longer than 64 bytes long (257 bytes), which can cause fragmentation since many radio modems use 64 bytes as maximum air transfer unit.
+Found 84 MAVLink message types in 1 XML files
+Generating C implementation in directory /home/wsartori/src/trunetcopter/mavlink/common
+Copying fixed headers
+
