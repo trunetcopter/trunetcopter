@@ -2,3 +2,5 @@ build/
 .dep/
 .cproject
 .project
+os/
+board/
