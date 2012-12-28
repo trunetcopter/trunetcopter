@@ -8,7 +8,7 @@
 #include "util.h"
 
 #define RADIO_STACK_SIZE	128
-#define RADIO_PRIORITY		NORMALPRIO+1 //25
+#define RADIO_PRIORITY		NORMALPRIO+10 //25
 
 #define RADIO_THROT		radioData.channels[(int)p[RADIO_THRO_CH]]
 #define RADIO_ROLL		radioData.channels[(int)p[RADIO_ROLL_CH]]

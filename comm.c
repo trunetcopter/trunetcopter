@@ -63,7 +63,7 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlink_msg_statustext_send(MAVLINK_COMM_0, 0, (const char *)noticeBuf);
 		}
 
-		chThdSleepMilliseconds(100);
+		chThdSleepMilliseconds(10);
 	}
 
 	return 0;
