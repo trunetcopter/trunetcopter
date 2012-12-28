@@ -31,6 +31,9 @@
 #include "chprintf.h"
 #include "string.h"
 
+#include "i2c_local.h"
+#include "MPU60X0.h"
+
 #include "config.h"
 #include "util.h"
 #include "comm.h"
@@ -77,6 +80,22 @@ int main(void) {
   chSysInit();
 
   randomInit();
+  I2CInitLocal();
+
+  set_mpu_sample_rate(9);
+  set_mpu_config_register(EXT_SYNC_SET0, DLPF_CFG0);
+  set_mpu_gyro(XG_ST_DIS, YG_ST_DIS, ZG_ST_DIS, FS_SEL_2000);
+  set_mpu_accel(XA_ST_DIS, YA_ST_DIS, ZA_ST_DIS, AFS_SEL_2g, ACCEL_HPF0);
+  set_mpu_power_mgmt1(DEVICE_RESET_DIS, SLEEP_DIS, CYCLE_DIS, TEMPERATURE_EN, CLKSEL_XG);
+  set_mpu_user_control(USER_FIFO_DIS, I2C_MST_DIS, I2C_IF_DIS, FIFO_RESET_DIS, I2C_MST_RESET_DIS, SIG_COND_RESET_DIS);
+
+  write_mpu_power_mgmt1();
+  write_mpu_int_cfg(); // enable I2C Auxiliary bypass on MPU
+  write_mpu_gyro();
+  write_mpu_accel();
+  write_mpu_sample_rate();
+
+  mpu_who_am_i();
   
   /*
    * Creates the example thread.
