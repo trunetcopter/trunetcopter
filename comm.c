@@ -2,6 +2,7 @@
 
 #include "mavlink.h"
 
+#include "util.h"
 #include "radio.h"
 
 msg_t noticeBuf[MAVLINK_NOTICE_LEN];
@@ -42,7 +43,7 @@ static msg_t ThreadMavlink(void *arg) {
 
 		// heartbeat
 		if (mavlinkData.nextHeartbeat < millis) {
-			mavlink_msg_heartbeat_send(MAVLINK_COMM_0, mavlink_system.type, MAV_AUTOPILOT_GENERIC_WAYPOINTS_ONLY, mavlinkData.mode, mavlinkData.nav_mode, mavlinkData.status);
+			mavlink_msg_heartbeat_send(MAVLINK_COMM_0, mavlink_system.type, MAV_AUTOPILOT_GENERIC_MISSION_FULL, mavlinkData.mode, mavlinkData.nav_mode, mavlinkData.status);
 			// calculate idle time
 			//mavCounter = counter;
 			//mavlinkData.idlePercent = (mavCounter - mavlinkData.lastCounter) * minCycles * 1000.0f / (MAVLINK_HEARTBEAT_INTERVAL * rccClocks.SYSCLK_Frequency / 1e6f);
@@ -86,7 +87,8 @@ void mavlinkInit(void) {
 	palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(7)); //TX
 	palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7)); //RX
 
-	mavlink_system.sysid = 1;
+	random_int(); // discard first random
+	mavlink_system.sysid = (random_int() & 0xff); //sysid is random 0-255
 	mavlink_system.compid = MAV_COMP_ID_MISSIONPLANNER;
 	mavlink_system.type = MAV_TYPE_HEXAROTOR;
 

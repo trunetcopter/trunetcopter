@@ -16,6 +16,9 @@
     Copyright © 2011, 2012  Bill Nesbitt
 */
 
+#include "ch.h"
+#include "hal.h"
+
 #include "util.h"
 #include <math.h>
 #include <stdio.h>
@@ -122,4 +125,25 @@ int ftoa(char *buf, float f, unsigned int digits) {
 	sprintf(&buf[index], format, whole, part, exponent);
 	return strlen(buf);
     }
+}
+
+void randomInit(void) {
+	rccEnableAHB2(RCC_AHB2ENR_RNGEN, 0);
+	// interrupt not needed at this time
+	RNG->CR |= RNG_CR_IE;
+	RNG->CR |= RNG_CR_RNGEN;
+}
+
+u32 random_int(void) {
+  static u32 last_value=0;
+  static u32 new_value=0;
+  u32 error_bits = 0;
+  error_bits = RNG_SR_SEIS | RNG_SR_CEIS;
+  while (new_value==last_value) {
+    /* Check for error flags and if data is ready. */
+    if ( ((RNG->SR & error_bits) == 0) && ( (RNG->SR & RNG_SR_DRDY) == 1 ) )
+      new_value=RNG->DR;
+  }
+  last_value=new_value;
+  return new_value;
 }

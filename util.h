@@ -39,4 +39,7 @@ extern void utilFilterReset(utilFilter_t *f, float setpoint);
 extern void utilFilterReset3(utilFilter_t *f, float setpoint);
 extern int ftoa(char *buf, float f, unsigned int digits);
 
+extern void randomInit(void);
+extern u32 random_int(void);
+
 #endif
