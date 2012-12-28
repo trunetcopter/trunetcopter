@@ -16,7 +16,9 @@
     Copyright © 2011, 2012  Bill Nesbitt
 */
 
-#define DEFAULT_CONFIG_VERSION	    103
+#define DEFAULT_CONFIG_VERSION	    104
+
+#define DEFAULT_SYSTEM_ID			81		// mavlink system id
 
 #define DEFAULT_RADIO_TYPE	    	2		// 0 == Spektrum 11bit, 1 == Spektrum 10bit, 2 == Futaba, 3 == PPM, 4 == PWM
 #define DEFAULT_RADIO_THRO_CH	    0

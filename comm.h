@@ -32,7 +32,6 @@ typedef struct {
 
 	uint16_t packetDrops;
 	uint16_t idlePercent;
-	unsigned long lastCounter;
 
 	unsigned long nextHeartbeat;
 	unsigned long nextParam;

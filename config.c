@@ -13,6 +13,7 @@ float p[CONFIG_NUM_PARAMS] __attribute__((section(".ccm")));
 
 const char *configParameterStrings[] = {
     "CONFIG_VERSION",
+    "SYSTEM_ID",
     "RADIO_TYPE",
     "RADIO_THRO_CH",
     "RADIO_ROLL_CH",
@@ -379,6 +380,7 @@ const char *configParameterStrings[] = {
 
 void configLoadDefault(void) {
     p[CONFIG_VERSION] = DEFAULT_CONFIG_VERSION;
+    p[SYSTEM_ID] = DEFAULT_SYSTEM_ID;
     p[RADIO_TYPE] = DEFAULT_RADIO_TYPE;
     p[RADIO_THRO_CH] = DEFAULT_RADIO_THRO_CH;
     p[RADIO_ROLL_CH] = DEFAULT_RADIO_ROLL_CH;

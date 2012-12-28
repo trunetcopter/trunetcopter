@@ -11,6 +11,7 @@
 
 enum configParameters {
     CONFIG_VERSION = 0,
+    SYSTEM_ID,
     RADIO_TYPE,
     RADIO_THRO_CH,
     RADIO_ROLL_CH,

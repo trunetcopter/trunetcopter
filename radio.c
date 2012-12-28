@@ -42,6 +42,8 @@ static msg_t ThreadRadio(void *arg) {
 				if (chTimeNow() - radioData.lastUpdate > 50)
 					radioReceptionQuality(-1);
 			}
+		} else {
+			chThdSleepMilliseconds(10);
 		}
 	}
 

@@ -2,6 +2,7 @@
 
 #include "mavlink.h"
 
+#include "config.h"
 #include "util.h"
 #include "radio.h"
 
@@ -26,7 +27,6 @@ static msg_t ThreadMavlink(void *arg) {
         (void)arg;
         chRegSetThreadName("mavlink");
 
-	static unsigned long mavCounter;
 	static unsigned long lastMillis = 0;
 	unsigned long millis;
 	mavlinkNotice("MavLink Initialized!");
@@ -44,14 +44,23 @@ static msg_t ThreadMavlink(void *arg) {
 		// heartbeat
 		if (mavlinkData.nextHeartbeat < millis) {
 			mavlink_msg_heartbeat_send(MAVLINK_COMM_0, mavlink_system.type, MAV_AUTOPILOT_GENERIC_MISSION_FULL, mavlinkData.mode, mavlinkData.nav_mode, mavlinkData.status);
-			// calculate idle time
-			//mavCounter = counter;
-			//mavlinkData.idlePercent = (mavCounter - mavlinkData.lastCounter) * minCycles * 1000.0f / (MAVLINK_HEARTBEAT_INTERVAL * rccClocks.SYSCLK_Frequency / 1e6f);
-			mavCounter = 0;
-			mavlinkData.idlePercent = 0;
-			mavlinkData.lastCounter = mavCounter;
 
-			mavlink_msg_sys_status_send(MAVLINK_COMM_0, 0, 0, 0, 1000-mavlinkData.idlePercent, -1, -1, -1, 0, mavlinkData.packetDrops, 0, 0, 0, 0);
+			Thread *thd = chRegFirstThread();
+			systime_t total = 0;
+			systime_t totalIdle = 0;
+
+			do {
+				if (!(strcmp(thd->p_name, "idle") == 0)) {
+					total += chThdGetTicks(thd);
+				} else {
+					totalIdle = chThdGetTicks(thd);
+				}
+			} while((thd = chRegNextThread(thd)));
+
+			systime_t totalTicks = chTimeNow();
+			mavlinkData.idlePercent = (int)(((float)total*1000)/(float)totalTicks);
+
+			mavlink_msg_sys_status_send(MAVLINK_COMM_0, 0, 0, 0, mavlinkData.idlePercent, -1, -1, -1, 0, mavlinkData.packetDrops, 0, 0, 0, 0);
 
 			mavlinkData.nextHeartbeat = millis + MAVLINK_HEARTBEAT_INTERVAL;
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] < millis) {
@@ -64,7 +73,7 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlink_msg_statustext_send(MAVLINK_COMM_0, 0, (const char *)noticeBuf);
 		}
 
-		chThdSleepMilliseconds(10);
+		chThdSleepMilliseconds(100);
 	}
 
 	return 0;
@@ -88,7 +97,8 @@ void mavlinkInit(void) {
 	palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7)); //RX
 
 	random_int(); // discard first random
-	mavlink_system.sysid = (random_int() & 0xff); //sysid is random 0-255
+	//mavlink_system.sysid = (random_int() & 0xff); //sysid is random 0-255
+	mavlink_system.sysid = p[SYSTEM_ID];
 	mavlink_system.compid = MAV_COMP_ID_MISSIONPLANNER;
 	mavlink_system.type = MAV_TYPE_HEXAROTOR;
 
