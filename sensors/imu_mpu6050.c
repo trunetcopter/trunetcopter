@@ -17,6 +17,8 @@ uint8_t mpu6050_buffer[14];
 void mpu6050_initialize(void) {
 	memset((void *)&mpu6050_buffer, 0, sizeof(mpu6050_buffer));
 
+	chThdSleepMilliseconds(MPU6050_START_UP_TIME_MAX);
+
 	mpu6050_setClockSource(MPU6050_CLOCK_PLL_XGYRO);
 	mpu6050_setFullScaleGyroRange(MPU6050_GYRO_FS_250);
 	mpu6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
@@ -29,6 +31,107 @@ void mpu6050_initialize(void) {
  */
 bool_t mpu6050_testConnection(void) {
     return mpu6050_getDeviceID() == 0x34;
+}
+
+bool_t mpu6050_selfTest() {
+	return mpu6050_AccelerometersSelfTest() && mpu6050_GyroscopesSelfTest();
+}
+
+bool_t mpu6050_AccelerometersSelfTest() {
+	uint8_t range = mpu6050_getFullScaleAccelRange();
+	float lsbSen;
+	switch (range) {
+		case MPU6050_ACCEL_FS_2:
+			lsbSen = MPU6050_ACCEL_LSB_SEN_FS_2;
+			break;
+		case MPU6050_ACCEL_FS_4:
+			lsbSen = MPU6050_ACCEL_LSB_SEN_FS_4;
+			break;
+		case MPU6050_ACCEL_FS_8:
+			lsbSen = MPU6050_ACCEL_LSB_SEN_FS_8;
+			break;
+		case MPU6050_ACCEL_FS_16:
+			lsbSen = MPU6050_ACCEL_LSB_SEN_FS_16;
+			break;
+		default:
+			// This case hasn't sense
+			return 0;
+			break;
+	}
+
+	mpu6050_setAccelXSelfTest(1);
+	mpu6050_setAccelYSelfTest(1);
+	mpu6050_setAccelZSelfTest(1);
+	chThdSleepMilliseconds(100);
+	int16_t tx, ty, tz;
+	mpu6050_getAcceleration(&tx,&ty,&tz);
+
+	mpu6050_setAccelXSelfTest(0);
+	mpu6050_setAccelYSelfTest(0);
+	mpu6050_setAccelZSelfTest(0);
+	chThdSleepMilliseconds(100);
+	int16_t x, y, z;
+	mpu6050_getAcceleration(&x,&y,&z);
+
+	float rx = lsbSen*(tx-x);
+	float ry = lsbSen*(ty-y);
+	float rz = lsbSen*(tz-z);
+
+	return MPU6050_ACCEL_SELF_TEST_X_AXIS_MIN <= rx &&
+			MPU6050_ACCEL_SELF_TEST_X_AXIS_MAX >= rx &&
+			MPU6050_ACCEL_SELF_TEST_Y_AXIS_MIN <= ry &&
+			MPU6050_ACCEL_SELF_TEST_Y_AXIS_MAX >= ry &&
+			MPU6050_ACCEL_SELF_TEST_Z_AXIS_MIN <= rz &&
+			MPU6050_ACCEL_SELF_TEST_Z_AXIS_MAX >= rz;
+
+}
+
+bool_t mpu6050_GyroscopesSelfTest() {
+	uint8_t range = mpu6050_getFullScaleGyroRange();
+	float lsbSen;
+	switch (range) {
+		case MPU6050_GYRO_FS_250:
+			lsbSen = MPU6050_GYRO_LSB_SEN_FS_250;
+			break;
+		case MPU6050_GYRO_FS_500:
+			lsbSen = MPU6050_GYRO_LSB_SEN_FS_500;
+			break;
+		case MPU6050_GYRO_FS_1000:
+			lsbSen = MPU6050_GYRO_LSB_SEN_FS_1000;
+			break;
+		case MPU6050_GYRO_FS_2000:
+			lsbSen = MPU6050_GYRO_LSB_SEN_FS_2000;
+			break;
+		default:
+			// This case hasn't sense
+			return 0;
+			break;
+	}
+
+	mpu6050_setGyroXSelfTest(1);
+	mpu6050_setGyroYSelfTest(1);
+	mpu6050_setGyroZSelfTest(1);
+	chThdSleepMilliseconds(100);
+	int16_t tx, ty, tz;
+	mpu6050_getRotation(&tx,&ty,&tz);
+
+	mpu6050_setGyroXSelfTest(0);
+	mpu6050_setGyroYSelfTest(0);
+	mpu6050_setGyroZSelfTest(0);
+	chThdSleepMilliseconds(100);
+	int16_t x, y, z;
+	mpu6050_getRotation(&x,&y,&z);
+
+	float rx = lsbSen*(tx-x);
+	float ry = lsbSen*(ty-y);
+	float rz = lsbSen*(tz-z);
+
+	return MPU6050_GYRO_SELF_TEST_X_AXIS_MIN <= rx &&
+			MPU6050_GYRO_SELF_TEST_X_AXIS_MAX >= rx &&
+			MPU6050_GYRO_SELF_TEST_Y_AXIS_MIN <= ry &&
+			MPU6050_GYRO_SELF_TEST_Y_AXIS_MAX >= ry &&
+			MPU6050_GYRO_SELF_TEST_Z_AXIS_MIN <= rz &&
+			MPU6050_GYRO_SELF_TEST_Z_AXIS_MAX >= rz;
 }
 
 // AUX_VDDIO register (InvenSense demo code calls this RA_*G_OFFS_TC)
@@ -175,6 +278,51 @@ void mpu6050_setDLPFMode(uint8_t mode) {
 }
 
 // GYRO_CONFIG register
+/** Get self-test enabled setting for gyroscope X axis.
+ * @return Self-test enabled value
+ * @see MPU6050_RA_GYRO_CONFIG
+ */
+bool_t mpu6050_getGyroXSelfTest(void) {
+    i2c_readBit(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_XG_ST_BIT, mpu6050_buffer);
+    return mpu6050_buffer[0];
+}
+/** Get self-test enabled setting for gyroscope X axis.
+ * @param enabled Self-test enabled value
+ * @see MPU6050_RA_GYRO_CONFIG
+ */
+void mpu6050_setGyroXSelfTest(bool_t enabled) {
+    i2c_writeBit(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_XG_ST_BIT, enabled);
+}
+/** Get self-test enabled value for gyroscope Y axis.
+ * @return Self-test enabled value
+ * @see MPU6050_RA_GYRO_CONFIG
+ */
+bool_t mpu6050_getGyroYSelfTest(void) {
+    i2c_readBit(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_YG_ST_BIT, mpu6050_buffer);
+    return mpu6050_buffer[0];
+}
+/** Get self-test enabled value for gyroscope Y axis.
+ * @param enabled Self-test enabled value
+ * @see MPU6050_RA_GYRO_CONFIG
+ */
+void mpu6050_setGyroYSelfTest(bool_t enabled) {
+    i2c_writeBit(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_YG_ST_BIT, enabled);
+}
+/** Get self-test enabled value for gyroscope Z axis.
+ * @return Self-test enabled value
+ * @see MPU6050_RA_GYRO_CONFIG
+ */
+bool_t mpu6050_getGyroZSelfTest(void) {
+    i2c_readBit(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_ZG_ST_BIT, mpu6050_buffer);
+    return mpu6050_buffer[0];
+}
+/** Set self-test enabled value for gyroscope Z axis.
+ * @param enabled Self-test enabled value
+ * @see MPU6050_RA_GYRO_CONFIG
+ */
+void mpu6050_setGyroZSelfTest(bool_t enabled) {
+    i2c_writeBit(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_ZG_ST_BIT, enabled);
+}
 
 /** Get full-scale gyroscope range.
  * The FS_SEL parameter allows setting the full-scale range of the gyro sensors,

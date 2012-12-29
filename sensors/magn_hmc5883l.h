@@ -13,6 +13,8 @@
 #define HMC5883L_ADDRESS            0x1E // this device only has one address
 #define HMC5883L_DEFAULT_ADDRESS    0x1E
 
+#define HMC5883L_MEASUREMENT_PERIOD 6 // From receiving command to data ready (ms)
+
 #define HMC5883L_RA_CONFIG_A        0x00
 #define HMC5883L_RA_CONFIG_B        0x01
 #define HMC5883L_RA_MODE            0x02
@@ -63,6 +65,10 @@
 #define HMC5883L_GAIN_330           0x06
 #define HMC5883L_GAIN_220           0x07
 
+static const uint16_t HMC5883L_LSB_PER_GAUS[]= {
+  1370, 1090, 820, 660, 440, 390, 330, 230
+};
+
 #define HMC5883L_MODEREG_BIT        1
 #define HMC5883L_MODEREG_LENGTH     2
 
@@ -73,8 +79,17 @@
 #define HMC5883L_STATUS_LOCK_BIT    1
 #define HMC5883L_STATUS_READY_BIT   0
 
+static const uint16_t HMC5883L_READY_FOR_I2C_COMMAND = 200; // Ready for I2C commands (µs)
+
+static const float  HMC5883L_SELF_TEST_X_AXIS_ABSOLUTE_GAUSS = 1.16f;
+static const float  HMC5883L_SELF_TEST_Y_AXIS_ABSOLUTE_GAUSS = 1.16f;
+static const float  HMC5883L_SELF_TEST_Z_AXIS_ABSOLUTE_GAUSS = 1.08f;
+
 extern uint8_t hmc5883l_buffer[6];
 extern uint8_t hmc5883l_mode;
+
+extern uint8_t hmc5883l_gain;
+extern float hmc5883l_scaleFactors[8][3];
 
 void hmc5883l_initialize(void);
 bool_t hmc5883l_testConnection(void);
@@ -89,7 +104,7 @@ void hmc5883l_setMeasurementBias(uint8_t bias);
 
 // CONFIG_B register
 uint8_t hmc5883l_getGain(void);
-void hmc5883l_setGain(uint8_t gain);
+void hmc5883l_setGain(uint8_t newGain);
 
 // MODE register
 uint8_t hmc5883l_getMode(void);
@@ -101,6 +116,11 @@ int16_t hmc5883l_getHeadingX(void);
 int16_t hmc5883l_getHeadingY(void);
 int16_t hmc5883l_getHeadingZ(void);
 
+void hmc5883l_getRawHeading(int16_t *x, int16_t *y, int16_t *z);
+int16_t hmc5883l_getRawHeadingX(void);
+int16_t hmc5883l_getRawHeadingY(void);
+int16_t hmc5883l_getRawHeadingZ(void);
+
 // STATUS register
 bool_t hmc5883l_getLockStatus(void);
 bool_t hmc5883l_getReadyStatus(void);
@@ -109,5 +129,7 @@ bool_t hmc5883l_getReadyStatus(void);
 uint8_t hmc5883l_getIDA(void);
 uint8_t hmc5883l_getIDB(void);
 uint8_t hmc5883l_getIDC(void);
+
+bool_t hmc5883l_calibrate(int8_t testGain);
 
 #endif /* MAGN_HMC5883L_H_ */

@@ -1,10 +1,13 @@
 #include "magn_hmc5883l.h"
 #include "../i2c_local.h"
+#include "../util.h"
 
 #include <string.h>
 
 uint8_t hmc5883l_buffer[6];
 uint8_t hmc5883l_mode;
+uint8_t hmc5883l_gain;
+float hmc5883l_scaleFactors[8][3];
 
 /** Power on and prepare for general usage.
  * This will prepare the magnetometer with default settings, ready for single-
@@ -17,6 +20,9 @@ uint8_t hmc5883l_mode;
 void hmc5883l_initialize(void) {
 	memset((void *)&hmc5883l_buffer, 0, sizeof(hmc5883l_buffer));
 
+	// We need to wait a bit...
+	chThdSleepMicroseconds(HMC5883L_READY_FOR_I2C_COMMAND);
+
     // write CONFIG_A register
     i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_CONFIG_A,
         (HMC5883L_AVERAGING_8 << (HMC5883L_CRA_AVERAGE_BIT - HMC5883L_CRA_AVERAGE_LENGTH + 1)) |
@@ -28,6 +34,16 @@ void hmc5883l_initialize(void) {
 
     // write MODE register
     hmc5883l_setMode(HMC5883L_MODE_SINGLE);
+
+    // TODO: Maybe it would be a good idea to use the EEPROM
+    // to store the scale factors and recover the last valid
+    // value in case of a calibration fail.
+    uint8_t gain;
+    for (gain = HMC5883L_GAIN_1370; gain <= HMC5883L_GAIN_220; gain ++) {
+    	hmc5883l_scaleFactors[gain][0] = 1.0f;
+    	hmc5883l_scaleFactors[gain][1] = 1.0f;
+    	hmc5883l_scaleFactors[gain][2] = 1.0f;
+    }
 }
 
 /** Verify the I2C connection.
@@ -159,11 +175,13 @@ uint8_t hmc5883l_getGain(void) {
  * @see HMC5883L_CRB_GAIN_BIT
  * @see HMC5883L_CRB_GAIN_LENGTH
  */
-void hmc5883l_setGain(uint8_t gain) {
+void hmc5883l_setGain(uint8_t newGain) {
     // use this method to guarantee that bits 4-0 are set to zero, which is a
     // requirement specified in the datasheet; it's actually more efficient than
     // using the I2Cdev.writeBits method
-    i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_CONFIG_B, gain << (HMC5883L_CRB_GAIN_BIT - HMC5883L_CRB_GAIN_LENGTH + 1));
+    if (i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_CONFIG_B, newGain << (HMC5883L_CRB_GAIN_BIT - HMC5883L_CRB_GAIN_LENGTH + 1))) {
+    	hmc5883l_gain = newGain; // track to select the scale factor
+    }
 }
 
 // MODE register
@@ -226,44 +244,116 @@ void hmc5883l_setMode(uint8_t newMode) {
  * @see HMC5883L_RA_DATAX_H
  */
 void hmc5883l_getHeading(int16_t *x, int16_t *y, int16_t *z) {
-    i2c_readBytes(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_DATAX_H, 6, hmc5883l_buffer);
-    if (hmc5883l_mode == HMC5883L_MODE_SINGLE) i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_MODE, HMC5883L_MODE_SINGLE << (HMC5883L_MODEREG_BIT - HMC5883L_MODEREG_LENGTH + 1));
-    *x = (((int16_t)hmc5883l_buffer[0]) << 8) | hmc5883l_buffer[1];
-    *y = (((int16_t)hmc5883l_buffer[4]) << 8) | hmc5883l_buffer[5];
-    *z = (((int16_t)hmc5883l_buffer[2]) << 8) | hmc5883l_buffer[3];
+	int16_t rawx, rawy, rawz;
+	hmc5883l_getRawHeading(&rawx, &rawy, &rawz);
+	*x = (int16_t) (hmc5883l_scaleFactors[hmc5883l_gain][0]*rawx);
+	*y = (int16_t) (hmc5883l_scaleFactors[hmc5883l_gain][1]*rawy);
+	*z = (int16_t) (hmc5883l_scaleFactors[hmc5883l_gain][2]*rawz);
 }
 /** Get X-axis heading measurement.
  * @return 16-bit signed integer with X-axis heading
  * @see HMC5883L_RA_DATAX_H
  */
 int16_t hmc5883l_getHeadingX(void) {
-    // each axis read requires that ALL axis registers be read, even if only
-    // one is used; this was not done ineffiently in the code by accident
-    i2c_readBytes(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_DATAX_H, 6, hmc5883l_buffer);
-    if (hmc5883l_mode == HMC5883L_MODE_SINGLE) i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_MODE, HMC5883L_MODE_SINGLE << (HMC5883L_MODEREG_BIT - HMC5883L_MODEREG_LENGTH + 1));
-    return (((int16_t)hmc5883l_buffer[0]) << 8) | hmc5883l_buffer[1];
+	int16_t x,y,z;
+	hmc5883l_getHeading(&x,&y,&z);
+	return x;
 }
 /** Get Y-axis heading measurement.
  * @return 16-bit signed integer with Y-axis heading
  * @see HMC5883L_RA_DATAY_H
  */
 int16_t hmc5883l_getHeadingY(void) {
-    // each axis read requires that ALL axis registers be read, even if only
-    // one is used; this was not done ineffiently in the code by accident
-    i2c_readBytes(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_DATAX_H, 6, hmc5883l_buffer);
-    if (hmc5883l_mode == HMC5883L_MODE_SINGLE) i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_MODE, HMC5883L_MODE_SINGLE << (HMC5883L_MODEREG_BIT - HMC5883L_MODEREG_LENGTH + 1));
-    return (((int16_t)hmc5883l_buffer[4]) << 8) | hmc5883l_buffer[5];
+	int16_t x,y,z;
+	hmc5883l_getHeading(&x,&y,&z);
+	return y;
 }
 /** Get Z-axis heading measurement.
  * @return 16-bit signed integer with Z-axis heading
  * @see HMC5883L_RA_DATAZ_H
  */
-int16_t hmc5883l_getHeadingZvoid(void) {
-    // each axis read requires that ALL axis registers be read, even if only
-    // one is used; this was not done ineffiently in the code by accident
-    i2c_readBytes(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_DATAX_H, 6, hmc5883l_buffer);
-    if (hmc5883l_mode == HMC5883L_MODE_SINGLE) i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_MODE, HMC5883L_MODE_SINGLE << (HMC5883L_MODEREG_BIT - HMC5883L_MODEREG_LENGTH + 1));
-    return (((int16_t)hmc5883l_buffer[2]) << 8) | hmc5883l_buffer[3];
+int16_t hmc5883l_getHeadingZ(void) {
+	int16_t x,y,z;
+	hmc5883l_getHeading(&x,&y,&z);
+	return z;
+}
+
+/** Get raw 3-axis heading measurements.
+ * In the event the ADC reading overflows or underflows for the given channel,
+ * or if there is a math overflow during the bias measurement, this data
+ * register will contain the value -4096. This register value will clear when
+ * after the next valid measurement is made. Note that this method automatically
+ * clears the appropriate bit in the MODE register if Single mode is active.
+ * @param x 16-bit signed integer container for X-axis heading
+ * @param y 16-bit signed integer container for Y-axis heading
+ * @param z 16-bit signed integer container for Z-axis heading
+ * @see HMC5883L_RA_DATAX_H
+ */
+void hmc5883l_getRawHeading(int16_t *x, int16_t *y, int16_t *z) {
+	if (hmc5883l_mode == HMC5883L_MODE_SINGLE) {
+		/*
+		 * When single-measurement mode is selected, device performs a single
+		 * measurement, sets RDY high and returned to idle mode. Mode register
+		 * returns to idle mode bit values. The measurement remains in the
+		 * data output register and RDY remains high until the data output
+		 * register is read or another measurement is performed.
+		 */
+		i2c_writeByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_MODE, HMC5883L_MODE_SINGLE << (HMC5883L_MODEREG_BIT - HMC5883L_MODEREG_LENGTH + 1));
+		chThdSleepMilliseconds(HMC5883L_MEASUREMENT_PERIOD);
+	} else {
+		/*
+		 * In continuous-measurement mode, the device continuously
+		 * performs measurements and places the result in the data register.
+		 * RDY goes high when new data is placed in all three registers.
+		 * After a power-on or a write to the mode or configuration register,
+		 * the first measurement set is available from all three data output
+		 * registers after a period of 2/fDO and subsequent measurements are
+		 * available at a frequency of fDO, where fDO is the frequency of
+		 * data output.
+		 *
+		 * The data output register lock bit is set when this some
+		 * but not all for of the six data output registers have been read.
+		 * When this bit is set, the six data output registers are locked
+		 * and any new data will not be placed in these register until
+		 * one of three conditions are met: one, all six bytes have been
+		 * read or the mode changed, two, the mode is changed, or three,
+		 * the measurement configuration is changed.
+		 */
+	}
+	i2c_readBytes(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_DATAX_H, 6, hmc5883l_buffer);
+    *x = (((int16_t) hmc5883l_buffer[0]) << 8) | hmc5883l_buffer[1];
+    *y = (((int16_t) hmc5883l_buffer[4]) << 8) | hmc5883l_buffer[5];
+    *z = (((int16_t) hmc5883l_buffer[2]) << 8) | hmc5883l_buffer[3];
+}
+
+/** Get raw X-axis heading measurement.
+ * @return 16-bit signed integer with X-axis heading
+ * @see HMC5883L_RA_DATAX_H
+ */
+int16_t hmc5883l_getRawHeadingX(void) {
+	int16_t x,y,z;
+	hmc5883l_getRawHeading(&x,&y,&z);
+    return x;
+}
+
+/** Get raw Y-axis heading measurement.
+ * @return 16-bit signed integer with Y-axis heading
+ * @see HMC5883L_RA_DATAY_H
+ */
+int16_t hmc5883l_getRawHeadingY(void) {
+	int16_t x,y,z;
+	hmc5883l_getRawHeading(&x,&y,&z);
+    return y;
+}
+
+/** Get raw Z-axis heading measurement.
+ * @return 16-bit signed integer with Z-axis heading
+ * @see HMC5883L_RA_DATAZ_H
+ */
+int16_t hmc5883l_getRawHeadingZ(void) {
+	int16_t x,y,z;
+	hmc5883l_getRawHeading(&x,&y,&z);
+    return z;
 }
 
 // STATUS register
@@ -320,4 +410,83 @@ uint8_t hmc5883l_getIDB(void) {
 uint8_t hmc5883l_getIDC(void) {
     i2c_readByte(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_ID_C, hmc5883l_buffer);
     return hmc5883l_buffer[0];
+}
+
+bool_t hmc5883l_calibrate(int8_t testGain) {
+
+	// Keep the current status ...
+	uint8_t previousGain = hmc5883l_getGain();
+
+	// Set the gain
+	if (testGain < 0) {
+		testGain = hmc5883l_gain;
+	}
+	hmc5883l_setGain(testGain);
+
+	// To check the HMC5883L for proper operation, a self test
+	// feature in incorporated in which the sensor offset straps
+	// are excited to create a nominal field strength (bias field)
+	// to be measured. To implement self test, the least significant
+	// bits (MS1 and MS0) of configuration register A are changed
+	// from 00 to 01 (positive bias) or 10 (negetive bias)
+	hmc5883l_setMeasurementBias(HMC5883L_BIAS_POSITIVE);
+
+	// Then, by placing the mode register into single-measurement mode ...
+	hmc5883l_setMode(HMC5883L_MODE_SINGLE);
+
+	// Two data acquisition cycles will be made on each magnetic vector.
+	// The first acquisition will be a set pulse followed shortly by
+	// measurement data of the external field. The second acquisition
+	// will have the offset strap excited (about 10 mA) in the positive
+	// bias mode for X, Y, and Z axes to create about a ±1.1 gauss self
+	// test field plus the external field.
+	// The first acquisition values will be subtracted from the
+	// second acquisition, and the net measurement will be placed into
+	// the data output registers.
+	int16_t x,y,z;
+	hmc5883l_getRawHeading(&x,&y,&z);
+
+	// In the event the ADC reading overflows or underflows for the
+	// given channel, or if there is a math overflow during the bias
+	// measurement, this data register will contain the value -4096.
+	// This register value will clear when after the next valid
+	// measurement is made.
+	if (min(x,min(y,z)) == -4096) {
+		hmc5883l_scaleFactors[testGain][0] = 1.0f;
+		hmc5883l_scaleFactors[testGain][1] = 1.0f;
+		hmc5883l_scaleFactors[testGain][2] = 1.0f;
+		return 0;
+	}
+	hmc5883l_getRawHeading(&x,&y,&z);
+
+	if (min(x,min(y,z)) == -4096) {
+		hmc5883l_scaleFactors[testGain][0] = 1.0f;
+		hmc5883l_scaleFactors[testGain][1] = 1.0f;
+		hmc5883l_scaleFactors[testGain][2] = 1.0f;
+		return 0;
+	}
+
+	// Since placing device in positive bias mode
+	// (or alternatively negative bias mode) applies
+	// a known artificial field on all three axes,
+	// the resulting ADC measurements in data output
+	// registers can be used to scale the sensors.
+	float xExpectedSelfTestValue =
+			HMC5883L_SELF_TEST_X_AXIS_ABSOLUTE_GAUSS *
+			HMC5883L_LSB_PER_GAUS[testGain];
+	float yExpectedSelfTestValue =
+			HMC5883L_SELF_TEST_Y_AXIS_ABSOLUTE_GAUSS *
+			HMC5883L_LSB_PER_GAUS[testGain];
+	float zExpectedSelfTestValue =
+			HMC5883L_SELF_TEST_Z_AXIS_ABSOLUTE_GAUSS *
+			HMC5883L_LSB_PER_GAUS[testGain];
+
+	hmc5883l_scaleFactors[testGain][0] = xExpectedSelfTestValue/x;
+	hmc5883l_scaleFactors[testGain][1] = yExpectedSelfTestValue/y;
+	hmc5883l_scaleFactors[testGain][2] = zExpectedSelfTestValue/z;
+
+	hmc5883l_setGain(previousGain);
+	hmc5883l_setMeasurementBias(HMC5883L_BIAS_NORMAL);
+
+	return 1;
 }
