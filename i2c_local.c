@@ -14,7 +14,7 @@
  * EXTERNS
  ******************************************************************************
  */
-extern uint32_t GlobalFlags;
+//extern uint32_t GlobalFlags;
 
 /*
  ******************************************************************************
@@ -59,11 +59,13 @@ msg_t i2c_transmit(i2caddr_t addr, const uint8_t *txbuf, size_t txbytes,
   i2cAcquireBus(&I2C_BUS);
   status = i2cMasterTransmitTimeout(&I2C_BUS, addr, txbuf, txbytes, rxbuf, rxbytes, tmo);
   i2cReleaseBus(&I2C_BUS);
-  if (status == RDY_TIMEOUT){
+  if (status != RDY_OK){
+	i2cAcquireBus(&I2C_BUS);
     i2cStop(&I2C_BUS);
+    I2C1->CR1 |= I2C_CR1_SWRST;
     chThdSleepMilliseconds(1);
     i2cStart(&I2C_BUS, &i2cfg1);
-    //setGlobalFlag(I2C_RESTARTED_FLAG);
+    i2cReleaseBus(&I2C_BUS);
     return status;
   }
   return status;
@@ -76,12 +78,13 @@ msg_t i2c_receive(i2caddr_t addr, uint8_t *rxbuf, size_t rxbytes){
   i2cAcquireBus(&I2C_BUS);
   status = i2cMasterReceiveTimeout(&I2C_BUS, addr, rxbuf, rxbytes, tmo);
   i2cReleaseBus(&I2C_BUS);
-  chDbgAssert(status == RDY_OK, "i2c_transmit(), #1", "error in driver");
-  if (status == RDY_TIMEOUT){
+  if (status != RDY_OK){
+	i2cAcquireBus(&I2C_BUS);
     i2cStop(&I2C_BUS);
+    I2C1->CR1 |= I2C_CR1_SWRST;
     chThdSleepMilliseconds(1);
     i2cStart(&I2C_BUS, &i2cfg1);
-    //setGlobalFlag(I2C_RESTARTED_FLAG);
+    i2cReleaseBus(&I2C_BUS);
     return status;
   }
   return status;
