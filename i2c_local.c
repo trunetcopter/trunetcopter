@@ -112,7 +112,7 @@ int8_t i2c_readBit(i2caddr_t devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in I2Cdev::readTimeout)
  * @return Status of read operation (true = success)
  */
-int8_t i2c_readWord(uint8_t devAddr, uint8_t regAddr, uint16_t *data) {
+int8_t i2c_readWord(i2caddr_t devAddr, uint8_t regAddr, uint16_t *data) {
     return i2c_readWords(devAddr, regAddr, 1, data);
 }
 
@@ -168,7 +168,7 @@ int8_t i2c_readBytes(i2caddr_t devAddr, uint8_t regAddr, uint8_t length, uint8_t
  * @param data Buffer to store read data in
  * @return Number of words read (0 indicates failure)
  */
-int8_t i2c_readWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t *data) {
+int8_t i2c_readWords(i2caddr_t devAddr, uint8_t regAddr, uint8_t length, uint16_t *data) {
 	uint16_t intermediate[(uint8_t)length];
 	msg_t status;
 	uint8_t i;
@@ -241,7 +241,7 @@ bool_t i2c_writeByte(i2caddr_t devAddr, uint8_t regAddr, uint8_t data) {
  * @param data New word value to write
  * @return Status of operation (true = success)
  */
-bool_t i2c_writeWord(uint8_t devAddr, uint8_t regAddr, uint16_t data) {
+bool_t i2c_writeWord(i2caddr_t devAddr, uint8_t regAddr, uint16_t data) {
     return i2c_writeWords(devAddr, regAddr, 1, &data);
 }
 
@@ -273,7 +273,7 @@ bool_t i2c_writeBytes(i2caddr_t devAddr, uint8_t regAddr, uint8_t length, uint8_
  * @param data Buffer to copy new data from
  * @return Status of operation (true = success)
  */
-bool_t i2c_writeWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint16_t* data) {
+bool_t i2c_writeWords(i2caddr_t devAddr, uint8_t regAddr, uint8_t length, uint16_t* data) {
 	uint8_t i;
 	uint8_t txbuf[20], rxbuf[1];
 

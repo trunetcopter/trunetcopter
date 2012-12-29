@@ -33,6 +33,8 @@
 
 #include "i2c_local.h"
 #include "sensors/imu_mpu6050.h"
+#include "sensors/magn_hmc5883l.h"
+#include "sensors/press_ms561101ba.h"
 
 #include "config.h"
 #include "util.h"
@@ -88,6 +90,10 @@ int main(void) {
 
   hmc5883l_initialize();
   hmc5883l_testConnection();
+
+  ms561101ba_initialize();
+  ms561101ba_testConnection();
+  ms561101ba_setOverSampleRate(MS561101BA_OSR_4096);
 
   /*
    * Creates the example thread.

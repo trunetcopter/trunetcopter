@@ -5,7 +5,7 @@
 #include "config.h"
 #include "util.h"
 #include "radio.h"
-#include "MPU60X0.h"
+#include "sensors/imu_mpu6050.h"
 
 msg_t noticeBuf[MAVLINK_NOTICE_LEN];
 
@@ -68,13 +68,13 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlink_msg_rc_channels_raw_send(MAVLINK_COMM_0, millis, 0, RADIO_THROT+1024, RADIO_ROLL+1024, RADIO_PITCH+1024, RADIO_RUDD+1024, RADIO_GEAR+1024, RADIO_FLAPS+1024, RADIO_AUX2+1024, RADIO_AUX3+1024, RADIO_QUALITY);
 			mavlink_msg_rc_channels_scaled_send(MAVLINK_COMM_0, millis, 0, (RADIO_THROT-750)*13, RADIO_ROLL*13, RADIO_PITCH*13, RADIO_RUDD*13, RADIO_GEAR*13, RADIO_FLAPS*13, RADIO_AUX2*13, RADIO_AUX3*13, RADIO_QUALITY);
 			mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS];
-		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] < millis) {
-			int16_t ax, ay, az, gx, gy, gz;
-			mpu_i2c_read_data(0x3B, 14, &ax, &ay, &az, &gx, &gy, &gz);
-			mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis, ax, ay, az, gx, gy, gz, -1, -1, -1);
-			//mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, micros, AQ_PRESSURE*0.01f, 0.0f, IMU_TEMP*100);
-			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS];
-		}
+		}// else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] < millis) {
+		//	int16_t ax, ay, az, gx, gy, gz;
+		//	mpu_i2c_read_data(0x3B, 14, &ax, &ay, &az, &gx, &gy, &gz);
+		//	mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis, ax, ay, az, gx, gy, gz, -1, -1, -1);
+		//	mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, micros, AQ_PRESSURE*0.01f, 0.0f, IMU_TEMP*100);
+		//	mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS];
+		//}
 
 
 		if (chMBFetch(mavlinkData.noticeQueue, noticeBuf, TIME_IMMEDIATE) == RDY_OK) {
