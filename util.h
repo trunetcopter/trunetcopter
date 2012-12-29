@@ -20,9 +20,12 @@
 #define _util_h
 
 #include <stdlib.h>
+#include "ch.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
+#define abs(a)   ((a)<0?(-(a)):(a))
+#define sgn(a)   ((a)<0?(-1):(1))
 
 // first order filter
 typedef struct {
@@ -43,6 +46,6 @@ extern void utilFilterReset3(utilFilter_t *f, float setpoint);
 extern int ftoa(char *buf, float f, unsigned int digits);
 
 extern void randomInit(void);
-extern u32 random_int(void);
+extern uint32_t random_int(void);
 
 #endif

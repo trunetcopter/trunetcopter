@@ -28,6 +28,8 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "stm32f4xx.h"
+
 #include "chprintf.h"
 #include "string.h"
 
@@ -35,6 +37,8 @@
 #include "sensors/imu_mpu6050.h"
 #include "sensors/magn_hmc5883l.h"
 #include "sensors/press_ms561101ba.h"
+
+#include "attitude_estimation/estimation.h"
 
 #include "config.h"
 #include "util.h"
@@ -50,6 +54,9 @@ static msg_t Thread1(void *arg) {
 
   (void)arg;
   chRegSetThreadName("blinker");
+
+  EKF_Init( &gStateData );
+
   while (TRUE) {
     //palSetPad(GPIOD, GPIOD_LED3);       /* Orange */
     palSetPad(GPIOD, GPIOD_LED4);       /* Green  */
@@ -61,6 +68,16 @@ static msg_t Thread1(void *arg) {
     //palClearPad(GPIOD, GPIOD_LED5);     /* Red    */
     //palClearPad(GPIOD, GPIOD_LED6);     /* Blue   */
     chThdSleepMilliseconds(500);
+
+    gSensorData.new_gyro_data = 0;
+    gSensorData.new_accel_data = 0;
+    gSensorData.new_mag_data = 0;
+
+    gSensorData.temperature = mpu6050_getTemperature();
+    mpu6050_getMotion6(&gSensorData.accel_x, &gSensorData.accel_y, &gSensorData.accel_z, &gSensorData.gyro_x, &gSensorData.gyro_y, &gSensorData.gyro_z);
+    hmc5883l_getHeading(&gSensorData.mag_x, &gSensorData.mag_y, &gSensorData.mag_z);
+
+    EKF_EstimateStates( &gStateData, &gSensorData );
   }
 
   return 0;
@@ -94,6 +111,14 @@ int main(void) {
   ms561101ba_initialize();
   ms561101ba_testConnection();
   ms561101ba_setOverSampleRate(MS561101BA_OSR_4096);
+
+  TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+  TIM_TimeBaseStructure.TIM_Period = 0xFFFF;
+  TIM_TimeBaseStructure.TIM_Prescaler = 84 - 1;
+  TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+  TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+  TIM_TimeBaseInit(TIM5, &TIM_TimeBaseStructure);
 
   /*
    * Creates the example thread.

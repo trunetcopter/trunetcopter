@@ -42,14 +42,14 @@ endif
 #
 
 # Enables the use of FPU on Cortex-M4.
-# Enable this if you really want to use the STM FWLib.
+# Enable this if you really want to use the STM FPU.
 ifeq ($(USE_FPU),)
   USE_FPU = yes
 endif
 
 # Enable this if you really want to use the STM FWLib.
 ifeq ($(USE_FWLIB),)
-  USE_FWLIB = no
+  USE_FWLIB = yes
 endif
 
 #
@@ -61,7 +61,7 @@ endif
 #
 
 # Define project name here
-PROJECT = ch
+PROJECT = trunetcopter
 
 # Imported source files and paths
 CHIBIOS = /Users/trunet/src/chibios
@@ -85,6 +85,7 @@ CSRC = $(PORTSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/chprintf.c \
+       $(wildcard attitude_estimation/*.c) \
        $(wildcard sensors/*.c) \
        $(wildcard *.c)
 
@@ -178,7 +179,7 @@ DINCDIR =
 DLIBDIR =
 
 # List all default libraries here
-DLIBS =
+DLIBS = -lm
 
 #
 # End of default section
