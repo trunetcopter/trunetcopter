@@ -21,8 +21,8 @@
 #define ADDR_FLASH_SECTOR_10    ((uint32_t)0x080C0000) /* Base @ of Sector 10, 128 Kbytes */
 #define ADDR_FLASH_SECTOR_11    ((uint32_t)0x080E0000) /* Base @ of Sector 11, 128 Kbytes */
 
-//extern int flashAddress(uint32_t startAddr, uint32_t *data, unsigned int len);
-//extern uint32_t flashStartAddr(void);
-//extern uint32_t flashSerno(uint8_t n);
+extern int flashAddress(uint32_t startAddr, uint32_t *data, unsigned int len);
+extern uint32_t flashStartAddr(void);
+extern uint32_t flashSerno(uint8_t n);
 
 #endif

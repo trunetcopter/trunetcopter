@@ -1,6 +1,7 @@
 #include "flash.h"
 
-/*
+#include "stm32f4xx_flash.h"
+
 // Gets the sector of a given address
 uint32_t GetSector(uint32_t Address) {
 uint32_t sector = 0;
@@ -102,4 +103,3 @@ uint32_t flashStartAddr(void) {
 uint32_t flashSerno(uint8_t n) {
     return *((uint32_t *)(0x1FFF7A10) + n);
 }
-*/

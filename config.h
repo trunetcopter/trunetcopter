@@ -387,8 +387,8 @@ extern float p[CONFIG_NUM_PARAMS];
 extern const char *configParameterStrings[];
 
 extern void configInit(void);
-//extern void configFlashRead(void);
-//extern unsigned char configFlashWrite(void);
+extern void configFlashRead(void);
+extern unsigned char configFlashWrite(void);
 extern void configLoadDefault(void);
 extern unsigned int configParameterRead(void *data);
 extern unsigned int configParameterWrite(void *data);

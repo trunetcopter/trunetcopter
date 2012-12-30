@@ -745,7 +745,6 @@ void configLoadDefault(void) {
     p[L1_ATT_MM_Y14] = DEFAULT_L1_ATT_MM_Y14;
 }
 
-/*
 void configFlashRead(void) {
     memcpy(&p, (char *)flashStartAddr(), sizeof(p));
 }
@@ -753,7 +752,6 @@ void configFlashRead(void) {
 unsigned char configFlashWrite(void) {
     return flashAddress(flashStartAddr(), (uint32_t *)&p, sizeof(p));
 }
-*/
 
 void configInit(void) {
     float ver = 0.0f;
@@ -770,8 +768,8 @@ void configInit(void) {
 
     // get flash version
     //ver = *(float *)flashStartAddr();
-    if (isnan(ver))
-	ver = 0.0f;
+    //if (isnan(ver))
+	//ver = 0.0f;
 
     // if compiled defaults are greater than flash version and loaded version
     if (DEFAULT_CONFIG_VERSION > ver && DEFAULT_CONFIG_VERSION > p[CONFIG_VERSION])
