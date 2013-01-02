@@ -49,7 +49,7 @@
  * This is a periodic thread that does absolutely nothing except flashing
  * a LED.
  */
-static WORKING_AREA(waThread1, 256);
+static WORKING_AREA(waThread1, 1024);
 static msg_t Thread1(void *arg) {
 
   (void)arg;
@@ -76,6 +76,8 @@ static msg_t Thread1(void *arg) {
     gSensorData.temperature = mpu6050_getTemperature();
     mpu6050_getMotion6(&gSensorData.accel_x, &gSensorData.accel_y, &gSensorData.accel_z, &gSensorData.gyro_x, &gSensorData.gyro_y, &gSensorData.gyro_z);
     hmc5883l_getHeading(&gSensorData.mag_x, &gSensorData.mag_y, &gSensorData.mag_z);
+
+    ms561101ba_readValues(&gSensorData.pressure, &gSensorData.baroTemp, MS561101BA_OSR_4096);
 
     EKF_EstimateStates( &gStateData, &gSensorData );
   }
@@ -112,13 +114,14 @@ int main(void) {
   ms561101ba_testConnection();
   ms561101ba_setOverSampleRate(MS561101BA_OSR_4096);
 
-  TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+  TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
   TIM_TimeBaseStructure.TIM_Period = 0xFFFF;
   TIM_TimeBaseStructure.TIM_Prescaler = 84 - 1;
   TIM_TimeBaseStructure.TIM_ClockDivision = 0;
   TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
   TIM_TimeBaseInit(TIM5, &TIM_TimeBaseStructure);
+  TIM_Cmd(TIM5, ENABLE);
 
   /*
    * Creates the example thread.

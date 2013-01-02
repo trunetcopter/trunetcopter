@@ -1920,9 +1920,17 @@ int16_t mpu6050_getAccelerationZ(void) {
  * @return Temperature reading in 16-bit 2's complement format
  * @see MPU6050_RA_TEMP_OUT_H
  */
-int16_t mpu6050_getTemperature(void) {
+int16_t mpu6050_getRawTemperature(void) {
     i2c_readBytes(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_TEMP_OUT_H, 2, mpu6050_buffer);
     return (((int16_t)mpu6050_buffer[0]) << 8) | mpu6050_buffer[1];
+}
+
+/** Get current internal temperature in Celcius.
+ * @return Temperature reading in 16-bit 2's complement format
+ * @see MPU6050_RA_TEMP_OUT_H
+ */
+float mpu6050_getTemperature(void) {
+	return ((float)mpu6050_getRawTemperature() + 12412.0) / 340.0;
 }
 
 // GYRO_*OUT_* registers

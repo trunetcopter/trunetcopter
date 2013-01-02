@@ -39,7 +39,12 @@ typedef struct __RawSensorData {
 	 int16_t new_mag_data;
 
       // Rate gyro temperature measurement
-      int16_t temperature;
+      float temperature;
+
+      // Barometer data
+      float baroTemp;
+      float pressure;
+      int16_t new_barometer_data;
 
 	  float GPS_latitude;
 	  float GPS_longitude;

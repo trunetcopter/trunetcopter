@@ -584,7 +584,8 @@ int16_t mpu6050_getAccelerationY(void);
 int16_t mpu6050_getAccelerationZ(void);
 
 // TEMP_OUT_* registers
-int16_t mpu6050_getTemperature(void);
+int16_t mpu6050_getRawTemperature(void);
+float mpu6050_getTemperature(void);
 
 // GYRO_*OUT_* registers
 void mpu6050_getRotation(int16_t* x, int16_t* y, int16_t* z);

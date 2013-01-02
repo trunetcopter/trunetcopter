@@ -12,9 +12,9 @@
 
 // The MS5611-01BA address is 111011Cx, where C
 // is the complementary value of the pin CSB
-#define MS561101BA_ADDRESS_CSB_LOW  0b1110111
-#define MS561101BA_ADDRESS_CSB_HIGH 0b1110110
-#define MS561101BA_DEFAULT_ADDRESS  0b1110110
+#define MS561101BA_ADDRESS_CSB_LOW  0x77
+#define MS561101BA_ADDRESS_CSB_HIGH 0x76
+#define MS561101BA_DEFAULT_ADDRESS  MS561101BA_ADDRESS_CSB_LOW
 
 // Register's address
 #define MS561101BA_RA_D1     0x40
@@ -40,13 +40,6 @@
 #define MS561101BA_MAX_CONVERSION_TIME_OSR_1024 2280
 #define MS561101BA_MAX_CONVERSION_TIME_OSR_2048 4540
 #define MS561101BA_MAX_CONVERSION_TIME_OSR_4096 9040
-
-static const uint8_t  POW_2_7  = 1 << 7;
-static const uint16_t POW_2_8  = 1 << 8;
-static const uint16_t POW_2_15 = 1 << 15;
-static const uint32_t POW_2_21 = 1L << 21;
-static const uint32_t POW_2_23 = 1L << 23;
-static const uint32_t POW_2_31 = 1L << 31;
 
 extern uint8_t defaultOsr;
 extern uint16_t prom[MS561101BA_PROM_NUM_REGISTERS];

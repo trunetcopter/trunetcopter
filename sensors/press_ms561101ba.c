@@ -49,6 +49,8 @@ bool_t ms561101ba_readPROM(void) {
 	for (add = 0; success && add < MS561101BA_PROM_NUM_REGISTERS; add++) {
 		uint8_t regAddr = MS561101BA_RA_PROM + (add << 1);
 		success = i2c_readWord(MS561101BA_DEFAULT_ADDRESS, regAddr, &prom[add]);
+		if (success == 0)
+			success = 1;
 	}
 	return success;
 }
@@ -93,17 +95,17 @@ bool_t ms561101ba_readValues(
 	if (d1 < 0 || d2 < 0) return 0;
 
 	int32_t dT = d2 - (((uint32_t) ms561101ba_getTREF()) << 8);
-	double t = 2000.0 + ((int64_t) dT) * ms561101ba_getTEMPSENS() / POW_2_23;
+	double t = 2000.0 + ((int64_t) dT) * ms561101ba_getTEMPSENS() / (1L << 23);
 
 	int64_t off  = (((int64_t) ms561101ba_getOFFT1())  << 16) +
-			((int64_t) dT) * ms561101ba_getTCO() / POW_2_7;
+			((int64_t) dT) * ms561101ba_getTCO() / (1 << 7);
 	int64_t sens = (((int64_t) ms561101ba_getSENST1()) << 15) +
-			((int64_t) dT) * ms561101ba_getTCS() / POW_2_8;
+			((int64_t) dT) * ms561101ba_getTCS() / (1 << 8);
 
 	// Second order temperature compensation
 	if (t < 2000) {
 		double square = pow (dT,2);
-		double t2 = square / POW_2_31;
+		double t2 = square / (1L << 31);
 		square = pow (t-2000,2);
 		double off2  = square * 5 / 2;
 		double sens2 = square * 5 / 4;
@@ -119,7 +121,7 @@ bool_t ms561101ba_readValues(
 
 	}
 
-	double p = ((sens * d1 / POW_2_21) - off) / POW_2_15;
+	double p = ((sens * d1 / (1L << 21)) - off) / (1 << 15);
 
 	*temperature = (float)t/100.0f;
 	*pressure    = (float)p/100.0f;
@@ -170,10 +172,10 @@ int32_t ms561101ba_readConversion(uint8_t regAddr, uint8_t osr) {
 			return -1;
 	}
 
-	if (i2c_writeBytes(MS561101BA_DEFAULT_ADDRESS, regAddr + osr, 0, NULL)) {
+	if (i2c_writeBytes(MS561101BA_DEFAULT_ADDRESS, regAddr + osr, 0, NULL) == RDY_OK) {
 		chThdSleepMicroseconds(maxConversionTime);
 		uint8_t adcOutput[3];
-		if (i2c_readBytes(MS561101BA_DEFAULT_ADDRESS, 0, 3, adcOutput)) {
+		if (i2c_readBytes(MS561101BA_DEFAULT_ADDRESS, 0, 3, adcOutput) == RDY_OK) {
 			return (((int32_t) adcOutput[0]) << 16) | (((int32_t) adcOutput[1]) << 8)  | ((int32_t) adcOutput[2]);
 		}
 	}
