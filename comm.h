@@ -8,7 +8,7 @@
 #include "mavlink/mavlink_types.h"
 
 #define MAVLINK_STACK_SIZE		512
-#define MAVLINK_PRIORITY		NORMALPRIO+5
+#define MAVLINK_PRIORITY		NORMALPRIO
 
 #define MAVLINK_SERIAL_DEVICE		SD2
 #define MAVLINK_SERIAL_BAUD		115200

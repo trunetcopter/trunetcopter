@@ -7,6 +7,7 @@
 ------------------------------------------------------------------------------ */
 
 #include <math.h>
+#include <string.h>
 #include "estimation.h"
 #include "matrix.h"
 #include "quat.h"
@@ -14,10 +15,17 @@
 #include "stm32f4xx_tim.h"
 
 #include "../util.h"
+#include "../sensors/sensors.h"
 
 // Data structures for holding sensor data and estimated states.
 RawSensorData gSensorData;
 AHRS_state_data gStateData;
+
+extern EventSource eventImuIrq;
+extern EventSource eventMagnIrq;
+extern EventSource eventImuRead;
+extern EventSource eventMagnRead;
+extern EventSource eventEKFDone;
 
 uint8_t gEKF_mode;
 
@@ -300,13 +308,13 @@ void EKF_Predict( AHRS_state_data* estimated_states, RawSensorData* sensor_data 
 		  temp2.rows = 4;
 		  temp2.columns = 4;
 
-		  float a, b, c, d;
+		  //float a, b, c, d;
 
 		  // Make local copies of the current attitude quaternion for convenience
-		  a = gStateData.qib.a;
-		  b = gStateData.qib.b;
-		  c = gStateData.qib.c;
-		  d = gStateData.qib.d;
+		  //a = gStateData.qib.a;
+		  //b = gStateData.qib.b;
+		  //c = gStateData.qib.c;
+		  //d = gStateData.qib.d;
 
 		  // Convert p, q, and r to rad/s
 		  p = p*3.14159/180;
@@ -690,6 +698,7 @@ void EKF_Correction( fMatrix* C, float sensor_data, float sensor_hat, float sens
 	 fMatrix Ctranspose,temp1,temp2,L;
 	 float gain_scale, error;
 
+	 if (sensor_covariance==0) sensor_covariance=1;
 	 //if( (gConfig.r[UM6_MISC_CONFIG] & UM6_QUAT_ESTIMATE_ENABLED) == 0 )
 	 //{
 	//	  mat_zero( &temp1, 3, 1 );
@@ -795,4 +804,209 @@ void unroll_states( AHRS_state_data* states )
 		  states->psi += 360;
 	 }
 
+}
+
+#define twoKpDef  (2.0f * 0.5f) // 2 * proportional gain
+#define twoKiDef  (2.0f * 0.1f) // 2 * integral gain
+
+/*
+ * Quartenion
+ */
+float invSqrt(float x) {
+	float halfx = 0.5f * x;
+	float y = x;
+	long i = *(long*)&y;
+	i = 0x5f3759df - (i>>1);
+	y = *(float*)&i;
+	y = y * (1.5f - (halfx * y * y));
+	return y;
+}
+
+void AHRSupdate(AHRS_state_data* estimated_states, RawSensorData* sensor_data) {
+  float recipNorm;
+  float q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
+  float halfex = 0.0f, halfey = 0.0f, halfez = 0.0f;
+  float qa, qb, qc;
+
+  float q0, q1, q2, q3, sampleFreq;
+  uint32_t timer_value;
+
+  timer_value = TIM_GetCounter(TIM5);
+  TIM_SetCounter(TIM5,0);
+
+  sampleFreq = (float)timer_value / 168.0f;
+
+  float ax, ay, az, gx, gy, gz, mx, my, mz;
+  ax = sensor_data->accel_x;
+  ay = sensor_data->accel_y;
+  az = sensor_data->accel_z;
+  gx = sensor_data->gyro_x;
+  gy = sensor_data->gyro_y;
+  gz = sensor_data->gyro_z;
+  mx = sensor_data->mag_x;
+  my = sensor_data->mag_y;
+  mz = sensor_data->mag_z;
+
+  q0 = estimated_states->qib.a;
+  q1 = estimated_states->qib.b;
+  q2 = estimated_states->qib.c;
+  q3 = estimated_states->qib.d;
+
+  // Auxiliary variables to avoid repeated arithmetic
+  q0q0 = q0 * q0;
+  q0q1 = q0 * q1;
+  q0q2 = q0 * q2;
+  q0q3 = q0 * q3;
+  q1q1 = q1 * q1;
+  q1q2 = q1 * q2;
+  q1q3 = q1 * q3;
+  q2q2 = q2 * q2;
+  q2q3 = q2 * q3;
+  q3q3 = q3 * q3;
+
+  // Use magnetometer measurement only when valid (avoids NaN in magnetometer normalisation)
+  if((mx != 0.0f) && (my != 0.0f) && (mz != 0.0f)) {
+    float hx, hy, bx, bz;
+    float halfwx, halfwy, halfwz;
+
+    // Normalise magnetometer measurement
+    recipNorm = invSqrt(mx * mx + my * my + mz * mz);
+    mx *= recipNorm;
+    my *= recipNorm;
+    mz *= recipNorm;
+
+    // Reference direction of Earth's magnetic field
+    hx = 2.0f * (mx * (0.5f - q2q2 - q3q3) + my * (q1q2 - q0q3) + mz * (q1q3 + q0q2));
+    hy = 2.0f * (mx * (q1q2 + q0q3) + my * (0.5f - q1q1 - q3q3) + mz * (q2q3 - q0q1));
+    bx = sqrt(hx * hx + hy * hy);
+    bz = 2.0f * (mx * (q1q3 - q0q2) + my * (q2q3 + q0q1) + mz * (0.5f - q1q1 - q2q2));
+
+    // Estimated direction of magnetic field
+    halfwx = bx * (0.5f - q2q2 - q3q3) + bz * (q1q3 - q0q2);
+    halfwy = bx * (q1q2 - q0q3) + bz * (q0q1 + q2q3);
+    halfwz = bx * (q0q2 + q1q3) + bz * (0.5f - q1q1 - q2q2);
+
+    // Error is sum of cross product between estimated direction and measured direction of field vectors
+    halfex = (my * halfwz - mz * halfwy);
+    halfey = (mz * halfwx - mx * halfwz);
+    halfez = (mx * halfwy - my * halfwx);
+  }
+
+  // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
+  if((ax != 0.0f) && (ay != 0.0f) && (az != 0.0f)) {
+    float halfvx, halfvy, halfvz;
+
+    // Normalise accelerometer measurement
+    recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+    ax *= recipNorm;
+    ay *= recipNorm;
+    az *= recipNorm;
+
+    // Estimated direction of gravity
+    halfvx = q1q3 - q0q2;
+    halfvy = q0q1 + q2q3;
+    halfvz = q0q0 - 0.5f + q3q3;
+
+    // Error is sum of cross product between estimated direction and measured direction of field vectors
+    halfex += (ay * halfvz - az * halfvy);
+    halfey += (az * halfvx - ax * halfvz);
+    halfez += (ax * halfvy - ay * halfvx);
+  }
+
+  // Apply feedback only when valid data has been gathered from the accelerometer or magnetometer
+  if(halfex != 0.0f && halfey != 0.0f && halfez != 0.0f) {
+    // Compute and apply integral feedback if enabled
+    if(estimated_states->twoKi > 0.0f) {
+      estimated_states->integralFBx += estimated_states->twoKi * halfex * (1.0f / sampleFreq);  // integral error scaled by Ki
+      estimated_states->integralFBy += estimated_states->twoKi * halfey * (1.0f / sampleFreq);
+      estimated_states->integralFBz += estimated_states->twoKi * halfez * (1.0f / sampleFreq);
+      gx += estimated_states->integralFBx;  // apply integral feedback
+      gy += estimated_states->integralFBy;
+      gz += estimated_states->integralFBz;
+    }
+    else {
+      estimated_states->integralFBx = 0.0f; // prevent integral windup
+      estimated_states->integralFBy = 0.0f;
+      estimated_states->integralFBz = 0.0f;
+    }
+
+    // Apply proportional feedback
+    gx += estimated_states->twoKp * halfex;
+    gy += estimated_states->twoKp * halfey;
+    gz += estimated_states->twoKp * halfez;
+  }
+
+  // Integrate rate of change of quaternion
+  gx *= (0.5f * (1.0f / sampleFreq));   // pre-multiply common factors
+  gy *= (0.5f * (1.0f / sampleFreq));
+  gz *= (0.5f * (1.0f / sampleFreq));
+  qa = q0;
+  qb = q1;
+  qc = q2;
+  q0 += (-qb * gx - qc * gy - q3 * gz);
+  q1 += (qa * gx + qc * gz - q3 * gy);
+  q2 += (qa * gy - qb * gz + q3 * gx);
+  q3 += (qa * gz + qb * gy - qc * gx);
+
+  // Normalise quaternion
+  recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+  q0 *= recipNorm;
+  q1 *= recipNorm;
+  q2 *= recipNorm;
+  q3 *= recipNorm;
+
+  estimated_states->qib.a = q0;
+  estimated_states->qib.b = q1;
+  estimated_states->qib.c = q2;
+  estimated_states->qib.d = q3;
+
+  compute_euler_angles( estimated_states );
+}
+
+/**
+ * Attitude Estimation thread
+ */
+static WORKING_AREA(PollAttitudeThreadWA, 1024);
+static msg_t PollAttitudeThread(void *arg){
+	(void)arg;
+	chRegSetThreadName("PollAttitude");
+
+	memset((void *)&gSensorData, 0, sizeof(gSensorData));
+	memset((void *)&gStateData, 0, sizeof(gStateData));
+
+	EventListener self_el1, self_el2;
+	chEvtRegister(&eventImuRead, &self_el1, EVT_IMU_READ);
+	chEvtRegister(&eventMagnRead, &self_el2, EVT_MAGN_READ);
+
+	gStateData.qib.a = 1.0f;
+
+	while (TRUE) {
+		chEvtWaitAll(EVENT_MASK(EVT_IMU_READ) | EVENT_MASK(EVT_MAGN_READ));
+		chEvtGetAndClearFlags(&self_el1);
+		chEvtGetAndClearFlags(&self_el2);
+		gSensorData.gyro_x = ((gSensorData.gyro_x / 16.4f) * M_PI/180);
+		gSensorData.gyro_y = ((gSensorData.gyro_y / 16.4f) * M_PI/180);
+		gSensorData.gyro_z = ((gSensorData.gyro_z / 16.4f) * M_PI/180);
+		gSensorData.scaled_accel_x = (gSensorData.accel_x / 4096.0f) * 1000;
+		gSensorData.scaled_accel_y = (gSensorData.accel_y / 4096.0f) * 1000;
+		gSensorData.scaled_accel_z = -(gSensorData.accel_z / 4096.0f) * 1000;
+		gSensorData.scaled_gyro_x = gSensorData.gyro_x * 1000;
+		gSensorData.scaled_gyro_y = gSensorData.gyro_y * 1000;
+		gSensorData.scaled_gyro_z = -(gSensorData.gyro_z * 1000);
+		gSensorData.scaled_mag_x = (gSensorData.mag_x * 0.92f) / 10;
+		gSensorData.scaled_mag_y = (gSensorData.mag_y * 0.92f) / 10;
+		gSensorData.scaled_mag_z = (gSensorData.mag_z * 0.92f) / 10;
+		//EKF_EstimateStates( &gStateData, &gSensorData );
+		AHRSupdate(&gStateData, &gSensorData);
+		chEvtBroadcastFlags(&eventEKFDone, EVT_EKF_DONE);
+	}
+	return 0;
+}
+
+void startEstimation(void) {
+	chThdCreateStatic(PollAttitudeThreadWA,
+			sizeof(PollAttitudeThreadWA),
+			NORMALPRIO,
+			PollAttitudeThread,
+			NULL);
 }

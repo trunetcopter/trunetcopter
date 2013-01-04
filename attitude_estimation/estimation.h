@@ -22,21 +22,29 @@ typedef struct __RawSensorData {
 	 int16_t gyro_y;
 	 int16_t gyro_z;
 
-	 int16_t new_gyro_data;
-
 	 int16_t accel_x;
 	 int16_t accel_y;
 	 int16_t accel_z;
-
-	 // Flag specifies whether there is new accel data in the sensor data structure
-	 int16_t new_accel_data;
 
 	 int16_t mag_x;
 	 int16_t mag_y;
 	 int16_t mag_z;
 
-	 // Flag specifies whether there is new magnetometer data in the sensor data structure
-	 int16_t new_mag_data;
+	 int16_t scaled_gyro_x;
+	 int16_t scaled_gyro_y;
+	 int16_t scaled_gyro_z;
+
+	 int16_t scaled_accel_x;
+	 int16_t scaled_accel_y;
+	 int16_t scaled_accel_z;
+
+	 int16_t scaled_mag_x;
+	 int16_t scaled_mag_y;
+	 int16_t scaled_mag_z;
+
+	 bool_t new_accel_data;
+	 bool_t new_gyro_data;
+	 bool_t new_mag_data;
 
       // Rate gyro temperature measurement
       float temperature;
@@ -44,8 +52,8 @@ typedef struct __RawSensorData {
       // Barometer data
       float baroTemp;
       float pressure;
-      int16_t new_barometer_data;
 
+      /*
 	  float GPS_latitude;
 	  float GPS_longitude;
 	  float GPS_altitude;
@@ -89,6 +97,7 @@ typedef struct __RawSensorData {
 	  uint8_t new_GPS_satellite_summary;
 
 	  uint8_t new_GPS_data;
+	  */
 
 } RawSensorData;
 
@@ -135,6 +144,10 @@ typedef struct __AHRS_state_data {
 
 	 // Quaternion states "qib" = Quaternion from Inertial to Body
 	 quat qib;
+
+	 float twoKp; // 2 * proportional gain (Kp)
+	 float twoKi; // 2 * integral gain (Ki)
+	 float integralFBx,  integralFBy, integralFBz;
 
 	 // Gyro biases
 	 int16_t beta_p,beta_q,beta_r;
@@ -200,6 +213,7 @@ typedef struct __AHRS_state_data {
       float temperature;
 
 	  // GPS stuff
+      /*
 	  float GPS_north;		// In meters
 	  float GPS_east;
 	  float GPS_h;
@@ -208,6 +222,7 @@ typedef struct __AHRS_state_data {
 	  float GPS_lat_home;
 	  float GPS_lon_home;
 	  float GPS_alt_home;
+	  */
 } AHRS_state_data;
 
 extern RawSensorData gSensorData;
@@ -236,5 +251,7 @@ void ConvertRawSensorData( AHRS_state_data* estimated_states, RawSensorData* sen
 void compute_euler_angles( AHRS_state_data* estimated_states );
 
 void unroll_states( AHRS_state_data* states );
+
+void startEstimation(void);
 
 #endif

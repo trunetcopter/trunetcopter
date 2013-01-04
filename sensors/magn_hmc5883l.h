@@ -111,7 +111,7 @@ uint8_t hmc5883l_getMode(void);
 void hmc5883l_setMode(uint8_t mode);
 
 // DATA* registers
-void hmc5883l_getHeading(int16_t *x, int16_t *y, int16_t *z);
+void hmc5883l_getHeading(int16_t *x, int16_t *y, int16_t *z, bool_t does_not_get);
 int16_t hmc5883l_getHeadingX(void);
 int16_t hmc5883l_getHeadingY(void);
 int16_t hmc5883l_getHeadingZ(void);

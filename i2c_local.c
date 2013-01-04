@@ -48,7 +48,7 @@ static systime_t calc_timeout(I2CDriver *i2cp, size_t txbytes, size_t rxbytes){
  * EXPORTED FUNCTIONS
  *******************************************************************************
  */
-void I2CInitLocal(void){
+void I2CInitLocal(void) {
   i2cStart(&I2C_BUS, &i2cfg1);
 }
 
@@ -131,7 +131,8 @@ int8_t i2c_readBits(i2caddr_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8_
     //    010   masked
     //   -> 010 shifted
     uint8_t count, b;
-    if ((count = i2c_readByte(devAddr, regAddr, &b)) != 0) {
+    //if ((count = i2c_readByte(devAddr, regAddr, &b)) != 0) {
+    if ((count = i2c_readByte(devAddr, regAddr, &b)) == RDY_OK) {
         uint8_t mask = ((1 << length) - 1) << (bitStart - length + 1);
         b &= mask;
         b >>= (bitStart - length + 1);
@@ -213,7 +214,7 @@ bool_t i2c_writeBits(i2caddr_t devAddr, uint8_t regAddr, uint8_t bitStart, uint8
     // 10100011 original & ~mask
     // 10101011 masked | value
     uint8_t b;
-    if (i2c_readByte(devAddr, regAddr, &b) != 0) {
+    if (i2c_readByte(devAddr, regAddr, &b) == RDY_OK) {
         uint8_t mask = ((1 << length) - 1) << (bitStart - length + 1);
         data <<= (bitStart - length + 1); // shift data into correct position
         data &= mask; // zero all non-important bits in data

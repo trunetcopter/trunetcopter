@@ -7,6 +7,11 @@
 #include "radio.h"
 #include "sensors/imu_mpu6050.h"
 
+#include "attitude_estimation/estimation.h"
+
+extern RawSensorData gSensorData;
+extern AHRS_state_data gStateData;
+
 msg_t noticeBuf[MAVLINK_NOTICE_LEN];
 
 mavlinkStruct_t mavlinkData;
@@ -46,6 +51,7 @@ static msg_t ThreadMavlink(void *arg) {
 		if (mavlinkData.nextHeartbeat < millis) {
 			mavlink_msg_heartbeat_send(MAVLINK_COMM_0, mavlink_system.type, MAV_AUTOPILOT_GENERIC_MISSION_FULL, mavlinkData.mode, mavlinkData.nav_mode, mavlinkData.status);
 
+			/*
 			Thread *thd = chRegFirstThread();
 			systime_t total = 0;
 			//systime_t totalIdle = 0;
@@ -57,6 +63,8 @@ static msg_t ThreadMavlink(void *arg) {
 				//	totalIdle = chThdGetTicks(thd);
 				//}
 			} while((thd = chRegNextThread(thd)));
+			*/
+			systime_t total = 400;
 
 			systime_t totalTicks = chTimeNow();
 			mavlinkData.idlePercent = (int)(((float)total*1000)/(float)totalTicks);
@@ -68,20 +76,24 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlink_msg_rc_channels_raw_send(MAVLINK_COMM_0, millis, 0, RADIO_THROT+1024, RADIO_ROLL+1024, RADIO_PITCH+1024, RADIO_RUDD+1024, RADIO_GEAR+1024, RADIO_FLAPS+1024, RADIO_AUX2+1024, RADIO_AUX3+1024, RADIO_QUALITY);
 			mavlink_msg_rc_channels_scaled_send(MAVLINK_COMM_0, millis, 0, (RADIO_THROT-750)*13, RADIO_ROLL*13, RADIO_PITCH*13, RADIO_RUDD*13, RADIO_GEAR*13, RADIO_FLAPS*13, RADIO_AUX2*13, RADIO_AUX3*13, RADIO_QUALITY);
 			mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS];
-		}// else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] < millis) {
-		//	int16_t ax, ay, az, gx, gy, gz;
-		//	mpu_i2c_read_data(0x3B, 14, &ax, &ay, &az, &gx, &gy, &gz);
-		//	mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis, ax, ay, az, gx, gy, gz, -1, -1, -1);
-		//	mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, micros, AQ_PRESSURE*0.01f, 0.0f, IMU_TEMP*100);
-		//	mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS];
-		//}
+		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] < millis) {
+			mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis*1000, gSensorData.accel_x, gSensorData.accel_y, gSensorData.accel_z, gSensorData.gyro_x, gSensorData.gyro_y, gSensorData.gyro_z, gSensorData.mag_x, gSensorData.mag_y, gSensorData.mag_z);
+			mavlink_msg_scaled_imu_send(MAVLINK_COMM_0, millis, gSensorData.scaled_accel_x, gSensorData.scaled_accel_y, gSensorData.scaled_accel_z, gSensorData.scaled_gyro_x, gSensorData.scaled_gyro_y, gSensorData.scaled_gyro_z, gSensorData.scaled_mag_x, gSensorData.scaled_mag_y, gSensorData.scaled_mag_z);
+			mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, millis, gSensorData.pressure, 0.0f, gSensorData.baroTemp);
+			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS];
+		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_CONTROLLER]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_CONTROLLER] < millis) {
+			mavlink_msg_attitude_send(MAVLINK_COMM_0, millis, gStateData.roll, gStateData.pitch, gStateData.yaw, gStateData.roll_rate, gStateData.pitch_rate, gStateData.yaw_rate);
+			mavlink_msg_attitude_quaternion_send(MAVLINK_COMM_0, millis, gStateData.qib.a, gStateData.qib.b, gStateData.qib.c, gStateData.qib.d, gStateData.roll_rate, gStateData.pitch_rate, gStateData.yaw_rate);
+			//mavlink_msg_servo_output_raw_send(MAVLINK_COMM_0, micros, 0, motorsData.value[0], motorsData.value[1], motorsData.value[2], motorsData.value[3], motorsData.value[4], motorsData.value[5], motorsData.value[6], motorsData.value[7]);
+			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_CONTROLLER] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_CONTROLLER];
+	    }
 
 
 		if (chMBFetch(mavlinkData.noticeQueue, noticeBuf, TIME_IMMEDIATE) == RDY_OK) {
 			mavlink_msg_statustext_send(MAVLINK_COMM_0, 0, (const char *)noticeBuf);
 		}
 
-		chThdSleepMilliseconds(100);
+		chThdSleepMilliseconds(10);
 	}
 
 	return 0;
@@ -104,7 +116,7 @@ void mavlinkInit(void) {
 	palSetPadMode(GPIOA, 2, PAL_MODE_ALTERNATE(7)); //TX
 	palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7)); //RX
 
-	random_int(); // discard first random
+	//random_int(); // discard first random
 	//mavlink_system.sysid = (random_int() & 0xff); //sysid is random 0-255
 	mavlink_system.sysid = p[SYSTEM_ID];
 	mavlink_system.compid = MAV_COMP_ID_MISSIONPLANNER;
@@ -118,8 +130,8 @@ void mavlinkInit(void) {
 
 	millis = chTimeNow();
 	for (i = 1; i < 13; i++) {
-		mavlinkData.streamInterval[i] = 1e3f;
-		mavlinkData.streamNext[i] = millis + 5e3f + i * 5.0;
+		mavlinkData.streamInterval[i] = 1e2f;
+		mavlinkData.streamNext[i] = millis + 1e2f + i * 5.0;
 	}
 
 	chThdCreateStatic(waThreadMavlink, sizeof(waThreadMavlink), MAVLINK_PRIORITY, ThreadMavlink, NULL);

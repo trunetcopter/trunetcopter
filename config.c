@@ -762,7 +762,7 @@ void configInit(void) {
     // try to load any config params from uSD card
     //if (configReadFile(0) < 0)
 	// clear config if read error
-	//memset(p, 0, sizeof(p));
+	memset(p, 0, sizeof(p));
     //else
 	//supervisorConfigRead();
 

@@ -74,10 +74,10 @@ void futabaInit(void) {
 			FUTABA_BAUD,
 	        (1 << 10),
 	        USART_CR2_STOP2_BITS,
-	        0
+	        0//(1 << 11)
 	};
 	radioData.serialPort = &FUTABA_SERIAL_DEVICE;
 	sdStart(radioData.serialPort, &sbusPortConfig);
-	palSetPadMode(GPIOA,  9, PAL_MODE_ALTERNATE(7)); //TX
-	palSetPadMode(GPIOA, 10, PAL_MODE_ALTERNATE(7)); //RX
+	//palSetPadMode(GPIOB, 6, PAL_MODE_ALTERNATE(7)); //TX
+	//palSetPadMode(GPIOB, 7, PAL_MODE_ALTERNATE(7)); //RX
 }

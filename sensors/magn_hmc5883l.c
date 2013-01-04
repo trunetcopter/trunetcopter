@@ -51,7 +51,7 @@ void hmc5883l_initialize(void) {
  * @return True if connection is valid, false otherwise
  */
 bool_t hmc5883l_testConnection(void) {
-    if (i2c_readBytes(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_ID_A, 3, hmc5883l_buffer) == 3) {
+    if (i2c_readBytes(HMC5883L_DEFAULT_ADDRESS, HMC5883L_RA_ID_A, 3, hmc5883l_buffer) == RDY_OK) {
         return (hmc5883l_buffer[0] == 'H' && hmc5883l_buffer[1] == '4' && hmc5883l_buffer[2] == '3');
     }
     return 0;
@@ -243,9 +243,15 @@ void hmc5883l_setMode(uint8_t newMode) {
  * @param z 16-bit signed integer container for Z-axis heading
  * @see HMC5883L_RA_DATAX_H
  */
-void hmc5883l_getHeading(int16_t *x, int16_t *y, int16_t *z) {
+void hmc5883l_getHeading(int16_t *x, int16_t *y, int16_t *z, bool_t does_not_get) {
 	int16_t rawx, rawy, rawz;
-	hmc5883l_getRawHeading(&rawx, &rawy, &rawz);
+	if (does_not_get != 1) {
+		hmc5883l_getRawHeading(&rawx, &rawy, &rawz);
+	} else {
+		rawx = (int16_t)*x;
+		rawy = (int16_t)*y;
+		rawz = (int16_t)*z;
+	}
 	*x = (int16_t) (hmc5883l_scaleFactors[hmc5883l_gain][0]*rawx);
 	*y = (int16_t) (hmc5883l_scaleFactors[hmc5883l_gain][1]*rawy);
 	*z = (int16_t) (hmc5883l_scaleFactors[hmc5883l_gain][2]*rawz);
@@ -256,7 +262,7 @@ void hmc5883l_getHeading(int16_t *x, int16_t *y, int16_t *z) {
  */
 int16_t hmc5883l_getHeadingX(void) {
 	int16_t x,y,z;
-	hmc5883l_getHeading(&x,&y,&z);
+	hmc5883l_getHeading(&x,&y,&z, 0);
 	return x;
 }
 /** Get Y-axis heading measurement.
@@ -265,7 +271,7 @@ int16_t hmc5883l_getHeadingX(void) {
  */
 int16_t hmc5883l_getHeadingY(void) {
 	int16_t x,y,z;
-	hmc5883l_getHeading(&x,&y,&z);
+	hmc5883l_getHeading(&x,&y,&z, 0);
 	return y;
 }
 /** Get Z-axis heading measurement.
@@ -274,7 +280,7 @@ int16_t hmc5883l_getHeadingY(void) {
  */
 int16_t hmc5883l_getHeadingZ(void) {
 	int16_t x,y,z;
-	hmc5883l_getHeading(&x,&y,&z);
+	hmc5883l_getHeading(&x,&y,&z, 0);
 	return z;
 }
 

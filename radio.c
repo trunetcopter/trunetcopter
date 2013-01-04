@@ -13,30 +13,34 @@ static WORKING_AREA(waThreadRadio, RADIO_STACK_SIZE);
 static msg_t ThreadRadio(void *arg) {
 	(void)arg;
 	chRegSetThreadName("radio");
+
+	EventListener elRadio;
 	if (radioData.radioType == 1 || radioData.radioType == 2) {
-		EventListener elRadio;
-		chEvtRegister(chIOGetEventSource(radioData.serialPort), &elRadio, 1);
+		chEvtRegisterMask((EventSource *)chnGetEventSource(radioData.serialPort), &elRadio, 1);
 	}
+
 	while (TRUE) {
 		if (radioData.radioType == 1 || radioData.radioType == 2) {
-			ioflags_t flags;
+			flagsmask_t flags;
 		    int q;
 
 			chEvtWaitOneTimeout(EVENT_MASK(1), MS2ST(10));
-			flags = chIOGetAndClearFlags(radioData.serialPort);
+			flags = chEvtGetAndClearFlags(&elRadio);
 
-			if (flags & IO_INPUT_AVAILABLE) {
-				char c;
-				c = chIOGetTimeout(radioData.serialPort, TIME_IMMEDIATE);
-				switch (radioData.radioType) {
-						case 2:
-							q = futabaCharIn(c);
-							radioData.lastUpdate = chTimeNow();
-							radioReceptionQuality(q);
-							break;
-						case 3:
-							//TODO
-							break;
+			if (flags & CHN_INPUT_AVAILABLE) {
+				int32_t c = 0;
+				while (c != Q_TIMEOUT) {
+					c = chnGetTimeout(radioData.serialPort, TIME_IMMEDIATE);
+					switch (radioData.radioType) {
+							case 2:
+								q = futabaCharIn(c);
+								radioData.lastUpdate = chTimeNow();
+								radioReceptionQuality(q);
+								break;
+							case 3:
+								//TODO
+								break;
+					}
 				}
 			} else {
 				if (chTimeNow() - radioData.lastUpdate > 50)

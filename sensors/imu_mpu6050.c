@@ -19,9 +19,9 @@ void mpu6050_initialize(void) {
 
 	chThdSleepMilliseconds(MPU6050_START_UP_TIME_MAX);
 
-	mpu6050_setClockSource(MPU6050_CLOCK_PLL_XGYRO);
-	mpu6050_setFullScaleGyroRange(MPU6050_GYRO_FS_250);
-	mpu6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
+	mpu6050_setClockSource(MPU6050_CLOCK_PLL_ZGYRO);
+	mpu6050_setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
+	mpu6050_setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
 	mpu6050_setSleepEnabled(0); // thanks to Jack Elston for pointing this one out!
 }
 
