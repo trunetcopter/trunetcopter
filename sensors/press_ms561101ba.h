@@ -10,6 +10,8 @@
 
 #include "ch.h"
 
+#define SEA_LEVEL_PRESSURE 1013.25f
+
 // The MS5611-01BA address is 111011Cx, where C
 // is the complementary value of the pin CSB
 #define MS561101BA_ADDRESS_CSB_LOW  0x77
@@ -48,12 +50,15 @@ void ms561101ba_initialize(void);
 bool_t ms561101ba_testConnection(void);
 bool_t ms561101ba_reset(void);
 bool_t ms561101ba_readPROM(void);
+bool_t ms561101ba_crc(void);
 bool_t ms561101ba_setOverSampleRate(uint8_t osr);
 
 bool_t ms561101ba_readValues(
 		float * pressure,
 		float * temperature,
 		int8_t osr);
+
+float ms561101ba_getAltitude(float pressure, float temperature);
 
 int32_t ms561101ba_readD1(int8_t osr);
 int32_t ms561101ba_readD2(int8_t osr);

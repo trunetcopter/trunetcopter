@@ -56,6 +56,28 @@ bool_t ms561101ba_readPROM(void) {
 }
 
 /**
+ * Check PROM data with CRC register
+ * @return Status of operation (false = failure)
+ */
+bool_t ms561101ba_crc(void) {
+	int32_t i, j;
+	uint32_t res = 0;
+	uint8_t crc = prom[7] & 0xF;
+	prom[7] &= 0xFF00;
+	for (i = 0; i < 16; i++) {
+		if (i & 1) res ^= ((prom[i>>1]) & 0x00FF);
+		else res ^= (prom[i>>1]>>8);
+		for (j = 8; j > 0; j--) {
+			if (res & 0x8000) res ^= 0x1800;
+			res <<= 1;
+		}
+	}
+	prom[7] |= crc;
+	if (crc == ((res >> 12) & 0xF)) return 1;
+	else return -1;
+}
+
+/**
  * Set the default oversample rate (osr)
  * @param osr Oversample rate. Optional.
  * @return Status of operation (true = success)
@@ -128,6 +150,18 @@ bool_t ms561101ba_readValues(
 
 	return 1;
 
+}
+
+float ms561101ba_getAltitude(float pressure, float temperature) {
+	//float tmp_float;
+	//float Altitude;
+
+	//tmp_float = (pressure / 101325.0);
+	//tmp_float = pow(tmp_float, 0.190295);
+	//Altitude = 44330.0 * (1.0 - tmp_float);
+
+	//return (Altitude);
+	return ((pow((SEA_LEVEL_PRESSURE / pressure), 1/5.257) - 1.0) * (temperature + 273.15)) / 0.0065;
 }
 
 /**

@@ -18,10 +18,11 @@ EventSource eventImuRead;
 EventSource eventMagnRead;
 EventSource eventEKFDone;
 
-extern RawSensorData gSensorData;
+sensorData gSensorData;
 extern AHRS_state_data gStateData;
 
-#define MAX_READINGS 4
+#define MAX_IMU_READINGS  1
+#define MAX_MAGN_READINGS 1
 int16_t readings[9];
 int32_t sum[9];
 uint8_t count[2];
@@ -36,29 +37,35 @@ static msg_t PollIMUThread(void *arg){
 
 	EventListener self_el1, self_el2;
 	chEvtRegister(&eventImuIrq, &self_el1, EVT_IMU_IRQ);
-	//chEvtRegister(&eventEKFDone, &self_el2, EVT_EKF_DONE);
+	chEvtRegister(&eventEKFDone, &self_el2, EVT_EKF_DONE);
+
+	uint32_t last_timer, current_timer;
 
 	while (TRUE) {
-		chEvtWaitOne(EVENT_MASK(EVT_IMU_IRQ));// | EVENT_MASK(EVT_EKF_DONE));
+		chEvtWaitAll(EVENT_MASK(EVT_IMU_IRQ) | EVENT_MASK(EVT_EKF_DONE));
 		chEvtGetAndClearFlags(&self_el1);
 		chEvtGetAndClearFlags(&self_el2);
-		gSensorData.temperature = mpu6050_getTemperature();
+
+		current_timer = TIM_GetCounter(TIM2);
+		gSensorData.imuFrequency = 1.0 / ((current_timer - last_timer) / 1e6);
+		last_timer = current_timer;
+
+		gSensorData.imuTemperature = mpu6050_getTemperature();
 		mpu6050_getMotion6(&readings[0], &readings[1], &readings[2], &readings[3], &readings[4], &readings[5]);
-		gSensorData.new_accel_data = 1;
-		gSensorData.new_gyro_data = 1;
 		sum[0] += readings[0];
 		sum[1] += readings[1];
 		sum[2] += readings[2];
 		sum[3] += readings[3];
 		sum[4] += readings[4];
 		sum[5] += readings[5];
-		if (count[0] >= MAX_READINGS) {
-			gSensorData.accel_x = sum[0] / count[0];
-			gSensorData.accel_y = sum[1] / count[0];
-			gSensorData.accel_z = sum[2] / count[0];
-			gSensorData.gyro_x = sum[3] / count[0];
-			gSensorData.gyro_y = sum[4] / count[0];
-			gSensorData.gyro_z = sum[5] / count[0];
+		count[0]++;
+		if (count[0] >= MAX_IMU_READINGS) {
+			gSensorData.raw_acc_x = sum[0] / count[0];
+			gSensorData.raw_acc_y = sum[1] / count[0];
+			gSensorData.raw_acc_z = sum[2] / count[0];
+			gSensorData.raw_gyr_x = sum[3] / count[0];
+			gSensorData.raw_gyr_y = sum[4] / count[0];
+			gSensorData.raw_gyr_z = sum[5] / count[0];
 			sum[0] = 0;
 			sum[1] = 0;
 			sum[2] = 0;
@@ -67,8 +74,6 @@ static msg_t PollIMUThread(void *arg){
 			sum[5] = 0;
 			chEvtBroadcastFlags(&eventImuRead, EVT_IMU_READ);
 			count[0] = 0;
-		} else {
-			count[0]++;
 		}
 	}
 	return 0;
@@ -84,28 +89,33 @@ static msg_t PollMagnThread(void *arg){
 
 	EventListener self_el1, self_el2;
 	chEvtRegister(&eventMagnIrq, &self_el1, EVT_MAGN_IRQ);
-	//chEvtRegister(&eventEKFDone, &self_el2, EVT_EKF_DONE);
+	chEvtRegister(&eventEKFDone, &self_el2, EVT_EKF_DONE);
+
+	uint32_t last_timer, current_timer;
 
 	while (TRUE) {
-		chEvtWaitOne(EVENT_MASK(EVT_MAGN_IRQ));// | EVENT_MASK(EVT_EKF_DONE));
+		chEvtWaitAll(EVENT_MASK(EVT_MAGN_IRQ) | EVENT_MASK(EVT_EKF_DONE));
 		chEvtGetAndClearFlags(&self_el1);
 		chEvtGetAndClearFlags(&self_el2);
+
+		current_timer = TIM_GetCounter(TIM2);
+		gSensorData.magFrequency = 1.0 / ((current_timer - last_timer) / 1e6);
+		last_timer = current_timer;
+
 		hmc5883l_getRawHeading(&readings[6], &readings[7], &readings[8]);
-		gSensorData.new_mag_data = 1;
 		sum[6] += readings[6];
 		sum[7] += readings[7];
 		sum[8] += readings[8];
-		if (count[1] >= MAX_READINGS) {
-			gSensorData.mag_x = sum[6] / count[1];
-			gSensorData.mag_y = sum[7] / count[1];
-			gSensorData.mag_z = sum[8] / count[1];
+		count[1]++;
+		if (count[1] >= MAX_MAGN_READINGS) {
+			gSensorData.raw_mag_x = sum[6] / count[1];
+			gSensorData.raw_mag_y = sum[7] / count[1];
+			gSensorData.raw_mag_z = sum[8] / count[1];
 			sum[6] = 0;
 			sum[7] = 0;
 			sum[8] = 0;
 			chEvtBroadcastFlags(&eventMagnRead, EVT_MAGN_READ);
 			count[1] = 0;
-		} else {
-			count[1]++;
 		}
 	}
 	return 0;
@@ -119,9 +129,15 @@ static msg_t PollBaroThread(void *arg){
 	(void)arg;
 	chRegSetThreadName("PollBaro");
 
+	uint32_t last_timer, current_timer;
+
 	while (TRUE) {
-		ms561101ba_readValues(&gSensorData.pressure, &gSensorData.baroTemp, MS561101BA_OSR_4096);
-		chThdSleepMilliseconds(100); // 10 Hz datasheet says 8.22ms on 4096 oversampling
+		current_timer = TIM_GetCounter(TIM2);
+		gSensorData.barFrequency = 1.0 / ((current_timer - last_timer) / 1e6);
+		last_timer = current_timer;
+		ms561101ba_readValues(&gSensorData.barPressure, &gSensorData.barTemperature, MS561101BA_OSR_4096);
+		gSensorData.barAltitude = ms561101ba_getAltitude(gSensorData.barPressure, gSensorData.barTemperature);
+		chThdSleepMilliseconds(10); // 100 Hz datasheet says 8.22ms on 4096 oversampling
 	}
 	return 0;
 }
@@ -149,9 +165,11 @@ void startSensors(void) {
 }
 
 void initSensors(void) {
+	memset((void *)&gSensorData, 0, sizeof(gSensorData));
+
 	mpu6050_initialize();
 	if (mpu6050_testConnection() != 1)
-		chDbgPanic("MPU6050 not found");
+		chDbgPanic("MPU6050: not found");
 	mpu6050_setRate(0x04); // Sample rate = 200Hz    Fsample= 1Khz/(4+1) = 200Hz
 	mpu6050_setDLPFMode(MPU6050_DLPF_BW_98);
 	mpu6050_setIntEnabled(1);
@@ -160,13 +178,16 @@ void initSensors(void) {
 
 	hmc5883l_initialize();
 	if (hmc5883l_testConnection() != 1)
-		chDbgPanic("HMC5883L not found");
-	//hmc5883l_calibrate(HMC5883L_GAIN_1090);
+		chDbgPanic("HMC5883L: not found");
+	hmc5883l_calibrate(HMC5883L_GAIN_1090);
 	hmc5883l_setSampleAveraging(HMC5883L_AVERAGING_8);
 	hmc5883l_setDataRate(HMC5883L_RATE_75);
 	hmc5883l_setMeasurementBias(HMC5883L_BIAS_NORMAL);
 
 	ms561101ba_initialize();
-	ms561101ba_testConnection();
+	//if (ms561101ba_testConnection() != 1)
+	//	chDbgPanic("MS5611-01BA: not found");
+	//if (ms561101ba_crc() != 1)
+	//	chDbgPanic("MS5611-01BA: PROM CRC mismatch");
 	ms561101ba_setOverSampleRate(MS561101BA_OSR_4096);
 }

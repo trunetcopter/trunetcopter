@@ -5,11 +5,12 @@
 #include "config.h"
 #include "util.h"
 #include "radio.h"
-#include "sensors/imu_mpu6050.h"
+//#include "sensors/imu_mpu6050.h"
+#include "sensors/sensors.h"
 
 #include "attitude_estimation/estimation.h"
 
-extern RawSensorData gSensorData;
+extern sensorData gSensorData;
 extern AHRS_state_data gStateData;
 
 msg_t noticeBuf[MAVLINK_NOTICE_LEN];
@@ -77,9 +78,9 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlink_msg_rc_channels_scaled_send(MAVLINK_COMM_0, millis, 0, (RADIO_THROT-750)*13, RADIO_ROLL*13, RADIO_PITCH*13, RADIO_RUDD*13, RADIO_GEAR*13, RADIO_FLAPS*13, RADIO_AUX2*13, RADIO_AUX3*13, RADIO_QUALITY);
 			mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS];
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] < millis) {
-			mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis*1000, gSensorData.accel_x, gSensorData.accel_y, gSensorData.accel_z, gSensorData.gyro_x, gSensorData.gyro_y, gSensorData.gyro_z, gSensorData.mag_x, gSensorData.mag_y, gSensorData.mag_z);
-			mavlink_msg_scaled_imu_send(MAVLINK_COMM_0, millis, gSensorData.scaled_accel_x, gSensorData.scaled_accel_y, gSensorData.scaled_accel_z, gSensorData.scaled_gyro_x, gSensorData.scaled_gyro_y, gSensorData.scaled_gyro_z, gSensorData.scaled_mag_x, gSensorData.scaled_mag_y, gSensorData.scaled_mag_z);
-			mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, millis, gSensorData.pressure, 0.0f, gSensorData.baroTemp);
+			mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis*1000, gSensorData.raw_acc_x, gSensorData.raw_acc_y, gSensorData.raw_acc_z, gSensorData.raw_gyr_x, gSensorData.raw_gyr_y, gSensorData.raw_gyr_z, gSensorData.raw_mag_x, gSensorData.raw_mag_y, gSensorData.raw_mag_z);
+			mavlink_msg_scaled_imu_send(MAVLINK_COMM_0, millis, gSensorData.scaled_acc_x*1000.0f, gSensorData.scaled_acc_y * 1000.0f, gSensorData.scaled_acc_z * 1000.0f, gSensorData.scaled_gyr_x * 1000.0f, gSensorData.scaled_gyr_y * 1000.0f, gSensorData.scaled_gyr_z * 1000.0f, gSensorData.scaled_mag_x, gSensorData.scaled_mag_y, gSensorData.scaled_mag_z);
+			mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, millis, gSensorData.barPressure, 0.0f, gSensorData.barTemperature);
 			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS];
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_CONTROLLER]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_CONTROLLER] < millis) {
 			mavlink_msg_attitude_send(MAVLINK_COMM_0, millis, gStateData.roll, gStateData.pitch, gStateData.yaw, gStateData.roll_rate, gStateData.pitch_rate, gStateData.yaw_rate);
