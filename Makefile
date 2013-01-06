@@ -202,7 +202,7 @@ UINCDIR =
 ULIBDIR =
 
 # List all user libraries here
-ULIBS =
+ULIBS = arm_cortexM4lf_math.lib
 
 #
 # End of user defines
@@ -216,7 +216,10 @@ else
 endif
 
 ifeq ($(USE_FWLIB),yes)
-  include $(CHIBIOS)/ext/stm32lib/stm32lib.mk
+  STM32DIR = /Users/trunet/src/STM32F4xx_DSP_StdPeriph_Lib_V1.0.1/Libraries/STM32F4xx_StdPeriph_Driver
+  STM32SRC = ${STM32DIR}/src/stm32f4xx_rcc.c \
+           ${STM32DIR}/src/stm32f4xx_tim.c
+  STM32INC = ${STM32DIR}/inc
   CSRC += $(STM32SRC)
   INCDIR += $(STM32INC)
   USE_OPT += -DUSE_STDPERIPH_DRIVER

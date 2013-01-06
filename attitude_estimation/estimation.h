@@ -45,6 +45,8 @@ typedef struct __AHRS_state_data {
 
 	// Frequency Estimation
 	float estFrequency;
+
+	uint32_t estRuntime;
 } AHRS_state_data;
 
 extern AHRS_state_data gStateData;
@@ -56,6 +58,7 @@ void compute_euler_angles( AHRS_state_data* estimated_states );
 void compute_yaw_pitch_roll( AHRS_state_data* estimated_states );
 
 float invSqrt(float x);
+float safe_asin(float v);
 
 void startEstimation(void);
 

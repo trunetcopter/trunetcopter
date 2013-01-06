@@ -1844,6 +1844,17 @@ void mpu6050_getMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int1
     *gy = (((int16_t)mpu6050_buffer[10]) << 8) | mpu6050_buffer[11];
     *gz = (((int16_t)mpu6050_buffer[12]) << 8) | mpu6050_buffer[13];
 }
+
+void mpu6050_getMotion6Temp(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* temperature) {
+    i2c_readBytes(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_ACCEL_XOUT_H, 14, mpu6050_buffer);
+    *ax = (((int16_t)mpu6050_buffer[0]) << 8) | mpu6050_buffer[1];
+    *ay = (((int16_t)mpu6050_buffer[2]) << 8) | mpu6050_buffer[3];
+    *az = (((int16_t)mpu6050_buffer[4]) << 8) | mpu6050_buffer[5];
+    *temperature = (((int16_t)mpu6050_buffer[6]) << 8) | mpu6050_buffer[7];
+    *gx = (((int16_t)mpu6050_buffer[8]) << 8) | mpu6050_buffer[9];
+    *gy = (((int16_t)mpu6050_buffer[10]) << 8) | mpu6050_buffer[11];
+    *gz = (((int16_t)mpu6050_buffer[12]) << 8) | mpu6050_buffer[13];
+}
 /** Get 3-axis accelerometer readings.
  * These registers store the most recent accelerometer measurements.
  * Accelerometer measurements are written to these registers at the Sample Rate
@@ -1925,12 +1936,16 @@ int16_t mpu6050_getRawTemperature(void) {
     return (((int16_t)mpu6050_buffer[0]) << 8) | mpu6050_buffer[1];
 }
 
+float mpu6050_convertTemperature(int16_t temperature) {
+	return ((float)temperature + 12412.0) / 340.0;
+}
+
 /** Get current internal temperature in Celcius.
  * @return Temperature reading in 16-bit 2's complement format
  * @see MPU6050_RA_TEMP_OUT_H
  */
 float mpu6050_getTemperature(void) {
-	return ((float)mpu6050_getRawTemperature() + 12412.0) / 340.0;
+	return mpu6050_convertTemperature(mpu6050_getRawTemperature());
 }
 
 // GYRO_*OUT_* registers

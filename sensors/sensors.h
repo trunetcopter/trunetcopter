@@ -37,6 +37,13 @@ typedef struct __sensorData {
     // Rate gyro temperature measurement
     float imuTemperature;
 
+    // Gyro Temperature Compensation Bias
+    float gyroTCBias[3];
+    float gyroTCBiasSlope[3]; // Calculated on long time calibration step
+    float gyroTCBiasIntercept[3]; // Calculated on long time calibration step
+    // Gyro Runtime Bias
+    float gyroRTBias[3];
+
     // Barometer data
     float barTemperature;
     float barPressure;
@@ -52,5 +59,9 @@ extern sensorData gSensorData;
 
 void initSensors(void);
 void startSensors(void);
+
+void fullCalibrateGyro(void);
+void computeGyroTCBias(void);
+void computeGyroRTBias(void);
 
 #endif

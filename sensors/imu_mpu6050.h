@@ -578,6 +578,7 @@ bool_t mpu6050_getIntDataReadyStatus(void);
 // ACCEL_*OUT_* registers
 void mpu6050_getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* mx, int16_t* my, int16_t* mz);
 void mpu6050_getMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz);
+void mpu6050_getMotion6Temp(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* temperature);
 void mpu6050_getAcceleration(int16_t* x, int16_t* y, int16_t* z);
 int16_t mpu6050_getAccelerationX(void);
 int16_t mpu6050_getAccelerationY(void);
@@ -585,6 +586,7 @@ int16_t mpu6050_getAccelerationZ(void);
 
 // TEMP_OUT_* registers
 int16_t mpu6050_getRawTemperature(void);
+float mpu6050_convertTemperature(int16_t temperature);
 float mpu6050_getTemperature(void);
 
 // GYRO_*OUT_* registers

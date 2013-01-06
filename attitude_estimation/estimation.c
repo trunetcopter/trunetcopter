@@ -6,6 +6,7 @@
   Description: Function definitions for CHR-6dm state estimation.
 ------------------------------------------------------------------------------ */
 
+#include <arm_math.h>
 #include <math.h>
 #include <string.h>
 #include "estimation.h"
@@ -26,20 +27,28 @@ extern EventSource eventImuRead;
 extern EventSource eventMagnRead;
 extern EventSource eventEKFDone;
 
+// a varient of asin() that checks the input ranges and ensures a
+// valid angle as output. If nan is given as input then zero is
+// returned.
+float safe_asin(float v)
+{
+        if (isnan(v)) {
+                return 0.0;
+        }
+        if (v >= 1.0) {
+                return PI/2;
+        }
+        if (v <= -1.0) {
+                return -PI/2;
+        }
+        return asin(v);
+}
+
 void compute_euler_angles( AHRS_state_data* estimated_states )
 {
-	//estimated_states->psi   = atan2(2 * estimated_states->qib.b * estimated_states->qib.c - 2 * estimated_states->qib.a * estimated_states->qib.d, 2 * estimated_states->qib.a*estimated_states->qib.a + 2 * estimated_states->qib.b * estimated_states->qib.b - 1);
-	//estimated_states->theta = -asin(2 * estimated_states->qib.b * estimated_states->qib.d + 2 * estimated_states->qib.a * estimated_states->qib.c);
-	//estimated_states->phi  = atan2(2 * estimated_states->qib.c * estimated_states->qib.d - 2 * estimated_states->qib.a * estimated_states->qib.b, 2 * estimated_states->qib.a * estimated_states->qib.a + 2 * estimated_states->qib.d * estimated_states->qib.d - 1);
-
-	// EKF
-	//estimated_states->roll  = atan2(2*(estimated_states->qib.a*estimated_states->qib.b + estimated_states->qib.c*estimated_states->qib.d),estimated_states->qib.d*estimated_states->qib.d - estimated_states->qib.c*estimated_states->qib.c - estimated_states->qib.b*estimated_states->qib.b + estimated_states->qib.a*estimated_states->qib.a)*180/3.14159;
-	//estimated_states->pitch = -asin(2*(estimated_states->qib.b*estimated_states->qib.d - estimated_states->qib.a*estimated_states->qib.c))*180/3.14159;
-	//estimated_states->yaw   = atan2(2*(estimated_states->qib.a*estimated_states->qib.d+estimated_states->qib.b*estimated_states->qib.c),estimated_states->qib.b*estimated_states->qib.b + estimated_states->qib.a*estimated_states->qib.a - estimated_states->qib.d*estimated_states->qib.d - estimated_states->qib.c*estimated_states->qib.c)*180/3.14159;
-
 	// APM
 	estimated_states->roll = -(atan2(2.0*(estimated_states->qib.a*estimated_states->qib.b + estimated_states->qib.c*estimated_states->qib.d), 1 - 2.0*(estimated_states->qib.b*estimated_states->qib.b + estimated_states->qib.c*estimated_states->qib.c)));
-	estimated_states->pitch = -asin(2.0*(estimated_states->qib.a*estimated_states->qib.c - estimated_states->qib.d*estimated_states->qib.b));
+	estimated_states->pitch = -safe_asin(2.0*(estimated_states->qib.a*estimated_states->qib.c - estimated_states->qib.d*estimated_states->qib.b));
 	estimated_states->yaw = atan2(2.0*(estimated_states->qib.a*estimated_states->qib.d + estimated_states->qib.b*estimated_states->qib.c), 1 - 2.0*(estimated_states->qib.c*estimated_states->qib.c + estimated_states->qib.d*estimated_states->qib.d));
 }
 
@@ -50,12 +59,19 @@ void compute_yaw_pitch_roll( AHRS_state_data* estimated_states ) {
 	gy = 2 * (estimated_states->qib.a*estimated_states->qib.b + estimated_states->qib.c*estimated_states->qib.d);
 	gz = estimated_states->qib.a*estimated_states->qib.a - estimated_states->qib.b*estimated_states->qib.b - estimated_states->qib.c*estimated_states->qib.c + estimated_states->qib.d*estimated_states->qib.d;
 
-	estimated_states->yaw = atan2(2 * estimated_states->qib.b * estimated_states->qib.c - 2 * estimated_states->qib.a * estimated_states->qib.d, 2 * estimated_states->qib.a*estimated_states->qib.a + 2 * estimated_states->qib.b * estimated_states->qib.b - 1) * 180/M_PI;
-	estimated_states->pitch = atan(gx / sqrt(gy*gy + gz*gz))  * 180/M_PI;
-	estimated_states->roll = atan(gy / sqrt(gx*gx + gz*gz))  * 180/M_PI;
+	estimated_states->yaw = atan2(2 * estimated_states->qib.b * estimated_states->qib.c - 2 * estimated_states->qib.a * estimated_states->qib.d, 2 * estimated_states->qib.a*estimated_states->qib.a + 2 * estimated_states->qib.b * estimated_states->qib.b - 1) * 180/PI;
+	estimated_states->pitch = atan(gx / sqrt(gy*gy + gz*gz))  * 180/PI;
+	estimated_states->roll = atan(gy / sqrt(gx*gx + gz*gz))  * 180/PI;
 }
 
 float invSqrt(float x) {
+	// from http://pizer.wordpress.com/2008/10/12/fast-inverse-square-root
+	unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
+	float tmp = *(float*)&i;
+	float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
+	return y;
+	// from madgwick
+	/*
 	float halfx = 0.5f * x;
 	float y = x;
 	long i = *(long*)&y;
@@ -63,6 +79,7 @@ float invSqrt(float x) {
 	y = *(float*)&i;
 	y = y * (1.5f - (halfx * y * y));
 	return y;
+	*/
 }
 
 void MadgwickAHRSupdate(AHRS_state_data* estimated_states, sensorData* sensor_data) {
@@ -258,9 +275,9 @@ static msg_t PollAttitudeThread(void *arg){
 		gSensorData.scaled_acc_y = (gSensorData.raw_acc_y / 4096.0f);
 		gSensorData.scaled_acc_z = (gSensorData.raw_acc_z / 4096.0f);
 
-		gSensorData.scaled_gyr_x = ((gSensorData.raw_gyr_x / 16.4f) * M_PI/180);
-		gSensorData.scaled_gyr_y = ((gSensorData.raw_gyr_y / 16.4f) * M_PI/180);
-		gSensorData.scaled_gyr_z = ((gSensorData.raw_gyr_z / 16.4f) * M_PI/180);
+		gSensorData.scaled_gyr_x = ((gSensorData.raw_gyr_x / 16.4f) * PI/180);
+		gSensorData.scaled_gyr_y = ((gSensorData.raw_gyr_y / 16.4f) * PI/180);
+		gSensorData.scaled_gyr_z = ((gSensorData.raw_gyr_z / 16.4f) * PI/180);
 
 		gSensorData.scaled_mag_x = gSensorData.raw_mag_x;
 		gSensorData.scaled_mag_y = gSensorData.raw_mag_y;
@@ -272,7 +289,8 @@ static msg_t PollAttitudeThread(void *arg){
 
 		MadgwickAHRSupdate(&gStateData, &gSensorData);
 		compute_euler_angles( &gStateData );
-		//compute_yaw_pitch_roll( &gStateData );
+		gStateData.estRuntime = TIM_GetCounter(TIM2) - last_timer;
+
 		chEvtBroadcastFlags(&eventEKFDone, EVT_EKF_DONE);
 	}
 	return 0;

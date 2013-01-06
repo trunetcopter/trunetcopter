@@ -83,7 +83,7 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, millis, gSensorData.barPressure, 0.0f, gSensorData.barTemperature);
 			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS];
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_CONTROLLER]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_CONTROLLER] < millis) {
-			mavlink_msg_attitude_send(MAVLINK_COMM_0, millis, gStateData.roll, gStateData.pitch, gStateData.yaw, gStateData.roll_rate, gStateData.pitch_rate, gStateData.yaw_rate);
+			mavlink_msg_attitude_send(MAVLINK_COMM_0, millis, gStateData.roll, (float)gStateData.pitch, gStateData.yaw, gStateData.roll_rate, gStateData.pitch_rate, gStateData.yaw_rate);
 			mavlink_msg_attitude_quaternion_send(MAVLINK_COMM_0, millis, gStateData.qib.a, gStateData.qib.b, gStateData.qib.c, gStateData.qib.d, gStateData.roll_rate, gStateData.pitch_rate, gStateData.yaw_rate);
 			//mavlink_msg_servo_output_raw_send(MAVLINK_COMM_0, micros, 0, motorsData.value[0], motorsData.value[1], motorsData.value[2], motorsData.value[3], motorsData.value[4], motorsData.value[5], motorsData.value[6], motorsData.value[7]);
 			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_CONTROLLER] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_CONTROLLER];

@@ -154,22 +154,11 @@ int main(void) {
 	chEvtInit(&eventMagnRead);
 	chEvtInit(&eventEKFDone);
 
-	//randomInit();
 	I2CInitLocal();
 
 	initSensors();
 
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	/*
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
-	TIM_TimeBaseStructure.TIM_Period = 0xFFFFFFFF;
-	TIM_TimeBaseStructure.TIM_Prescaler = 84 - 1;
-	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseInit(TIM5, &TIM_TimeBaseStructure);
-	TIM_Cmd(TIM5, ENABLE);
-	*/
-
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 	TIM_TimeBaseStructure.TIM_Period = 0xFFFFFFFF;
 	TIM_TimeBaseStructure.TIM_Prescaler = 84 - 1;
