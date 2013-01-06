@@ -1,0 +1,72 @@
+A ChibiOS multicopter code.
+
+Using on FEZ Cerb40 STM32F4 board with FreeIMU v0.4r3,
+S.BUS RX and 24LC256 EEPROM and up to 8 PWM motors.
+
+Some code and ideas from:
+- MultiWii
+- Aeroquad
+- Diydrones Arducopter
+- Madgwick
+- Baseflight/Baseflightplus from afrodevices T.C.
+- CH Robotics
+
+Pins used:
+PA0  - TIM2 CH1
+PA1  - TIM2 CH2
+PA2  - USART2 TX
+PA3  - USART2 RX
+PA4  - SPI1 NSS
+PA5  - SPI1 SCK
+PA6  - SPI1 MISO
+PA7  - SPI1 MOSI
+PA8  - 
+PA13 - SWDIO Debug
+PA14 - SWCLK Debug
+PB3  - 
+PB4  - 
+PB5  - 
+PB6  - USART1 TX
+PB7  - USART1 RX
+PB8  - I2C1 SCL
+PB9  - I2C1 SDA
+PB10 - TIM2 CH3
+PB11 - TIM2 CH4
+PB14 - 
+PB15 - 
+PC0  - MPU6050 IRQ
+PC1  - HMC5883L IRQ
+PC2  - 
+PC3  - 
+PC6  - TIM3 CH1
+PC7  - TIM3 CH2
+PC8  - TIM3 CH3
+PC9  - TIM3 CH4
+PC10 - USART3 TX
+PC11 - USART3 RX 
+PC12 - 
+PD2  - 
+
+USART1 - S.BUS Radio
+USART2 - Mavlink output 115200bps
+USART3 - GPS
+I2C1   - FreeIMU + EEPROM
+TIM2   - Motors/ESC PWM Connections
+TIM3   - Motors/ESC PWM Connections
+ 
+
+Copyright (C) 2012 Wagner Sartori Junior <wsartori@gmail.com>
+http://www.wsartori.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

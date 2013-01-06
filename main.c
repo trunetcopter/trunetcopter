@@ -34,11 +34,7 @@
 #include "string.h"
 
 #include "i2c_local.h"
-//#include "sensors/imu_mpu6050.h"
-//#include "sensors/magn_hmc5883l.h"
-//#include "sensors/press_ms561101ba.h"
 #include "sensors/sensors.h"
-
 #include "attitude_estimation/estimation.h"
 
 #include "config.h"
@@ -84,54 +80,52 @@ void mpu6050_interrupt_handler(EXTDriver *extp, expchannel_t channel) {
 	(void) extp;
 	(void) channel;
 
-	chSysLockFromIsr();
-	chEvtBroadcastFlagsI(&eventImuIrq, EVT_IMU_IRQ );
-	chSysUnlockFromIsr();
+	chSysLockFromIsr()
+	;
+	chEvtBroadcastFlagsI(&eventImuIrq, EVT_IMU_IRQ);
+	chSysUnlockFromIsr()
+	;
 }
 
 void hmc5883l_interrupt_handler(EXTDriver *extp, expchannel_t channel) {
 	(void) extp;
 	(void) channel;
 
-	chSysLockFromIsr();
-	chEvtBroadcastFlagsI(&eventMagnIrq, EVT_MAGN_IRQ );
-	chSysUnlockFromIsr();
+	chSysLockFromIsr()
+	;
+	chEvtBroadcastFlagsI(&eventMagnIrq, EVT_MAGN_IRQ);
+	chSysUnlockFromIsr()
+	;
 }
 
-static const EXTConfig extcfg = { {
-		{ EXT_CH_MODE_FALLING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, mpu6050_interrupt_handler },
-		{ EXT_CH_MODE_RISING_EDGE  | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, hmc5883l_interrupt_handler },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL },
-		{ EXT_CH_MODE_DISABLED, NULL } },
-		//EXT_MODE_EXTI(0, /* 0 */
-		//			  0, /* 1 */
-		//			  0, /* 2 */
-		//			  0, /* 3 */
-		//			  EXT_MODE_GPIOB, /* 4 */
-		//			  EXT_MODE_GPIOB, /* 5 */
-		//			  0, /* 6 */
-		//			  0, /* 7 */
-		//			  0, /* 8 */
-		//			  0, /* 9 */
-		//			  0, /* 10 */
-		//			  0, /* 11 */
-		//			  0, /* 12 */
-		//			  0, /* 13 */
-		//			  0, /* 14 */
-		//			  0) /* 15 */
-};
+static const EXTConfig extcfg = { { { EXT_CH_MODE_FALLING_EDGE
+		| EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, mpu6050_interrupt_handler }, {
+		EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC,
+		hmc5883l_interrupt_handler }, { EXT_CH_MODE_DISABLED, NULL }, {
+		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
+		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
+		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
+		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
+		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
+		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
+		EXT_CH_MODE_DISABLED, NULL } },
+//EXT_MODE_EXTI(0, /* 0 */
+//			  0, /* 1 */
+//			  0, /* 2 */
+//			  0, /* 3 */
+//			  EXT_MODE_GPIOB, /* 4 */
+//			  EXT_MODE_GPIOB, /* 5 */
+//			  0, /* 6 */
+//			  0, /* 7 */
+//			  0, /* 8 */
+//			  0, /* 9 */
+//			  0, /* 10 */
+//			  0, /* 11 */
+//			  0, /* 12 */
+//			  0, /* 13 */
+//			  0, /* 14 */
+//			  0) /* 15 */
+		};
 
 /*
  * Application entry point.
@@ -159,13 +153,13 @@ int main(void) {
 	initSensors();
 
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
 	TIM_TimeBaseStructure.TIM_Period = 0xFFFFFFFF;
 	TIM_TimeBaseStructure.TIM_Prescaler = 84 - 1;
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-	TIM_Cmd(TIM2, ENABLE);
+	TIM_TimeBaseInit(TIM5, &TIM_TimeBaseStructure);
+	TIM_Cmd(TIM5, ENABLE);
 
 	/*
 	 * Creates the example thread.
