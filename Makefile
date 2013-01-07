@@ -118,8 +118,8 @@ ASMSRC = $(PORTASM)
 
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
-         mavlink mavlink/common \
-         $(CHIBIOS)/os/various
+         $(CHIBIOS)/os/various \
+         config mavlink mavlink/common
 
 #
 # Project, sources and paths
@@ -216,7 +216,7 @@ else
 endif
 
 ifeq ($(USE_FWLIB),yes)
-  STM32DIR = /Users/trunet/src/STM32F4xx_DSP_StdPeriph_Lib_V1.0.1/Libraries/STM32F4xx_StdPeriph_Driver
+  STM32DIR = STM32F4xx_StdPeriph_Driver
   STM32SRC = ${STM32DIR}/src/stm32f4xx_rcc.c \
            ${STM32DIR}/src/stm32f4xx_tim.c
   STM32INC = ${STM32DIR}/inc
