@@ -12,13 +12,13 @@ Some code and ideas from:
 - CH Robotics
 - i2cdev libraries files
 
-Pins used:
+Pins used(WARNING: * PINS IS NOT 5V TOLERANT):
 PA0  - TIM2 CH1
 PA1  - TIM2 CH2
 PA2  - USART2 TX
 PA3  - USART2 RX
-PA4  - SPI1 NSS
-PA5  - SPI1 SCK
+*PA4  - SPI1 NSS
+*PA5  - SPI1 SCK
 PA6  - SPI1 MISO
 PA7  - SPI1 MOSI
 PA8  - 

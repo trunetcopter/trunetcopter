@@ -64,7 +64,7 @@ static msg_t ThreadRadio(void *arg) {
 					radioReceptionQuality(-1);
 			}
 		} else {
-			chThdSleepMilliseconds(10);
+			chThdSleepMilliseconds(100);
 		}
 	}
 
