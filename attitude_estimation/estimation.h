@@ -1,28 +1,33 @@
-/* ------------------------------------------------------------------------------
-  File: estimation.h
-  Author: CH Robotics
-  Version: 1.0
+/*
+This file is part of Trunetcopter.
 
-  Description: Function declarations for CHR-6dm state estimation.
------------------------------------------------------------------------------- */
+Trunetcopter is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Trunetcopter is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef _ESTIMATION__
 #define _ESTIMATION__
 
 #include "ch.h"
 
-#include "quat.h"
-#include "matrix.h"
 #include "../sensors/sensors.h"
 
 #define betaDef		0.1f		// 2 * proportional gain
 
-// Structure for storing AHRS states and other data related to state computation
-// This structure is, in a way, redundant because all this data is also stored in the
-// UM6_config or UM6_data structures.  However, in the config and data strucutres, the
-// data is packaged as UInt32 entries into an array for convenience with communication.
-// To use the data as floats, special formatting is required.  This structure provides
-// a place to store that data in the expected format, which makes accessing it easier.
+typedef struct _quat {
+	 float a,b,c,d;
+} quat;
+
 typedef struct __AHRS_state_data {
 	// YAW/PITCH/ROLL
 	float roll;

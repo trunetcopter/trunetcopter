@@ -10,6 +10,7 @@ Some code and ideas from:
 - Madgwick
 - Baseflight/Baseflightplus from afrodevices T.C.
 - CH Robotics
+- i2cdev libraries files
 
 Pins used:
 PA0  - TIM2 CH1
@@ -55,7 +56,7 @@ TIM2   - Motors/ESC PWM Connections
 TIM3   - Motors/ESC PWM Connections
  
 
-Copyright (C) 2012 Wagner Sartori Junior <wsartori@gmail.com>
+Copyright (C) 2012-2013 Wagner Sartori Junior <wsartori@gmail.com>
 http://www.wsartori.com
 
 This program is free software: you can redistribute it and/or modify
