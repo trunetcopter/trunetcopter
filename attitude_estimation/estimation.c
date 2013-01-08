@@ -290,13 +290,13 @@ static msg_t PollAttitudeThread(void *arg){
 		gSensorData.scaled_mag_y = gSensorData.raw_mag_y;
 		gSensorData.scaled_mag_z = gSensorData.raw_mag_z;
 
-		current_timer = TIM_GetCounter(TIM2);
+		current_timer = TIM_GetCounter(TIM5);
 		gStateData.estFrequency = 1.0f / ((current_timer - last_timer) / 1e6f);
 		last_timer = current_timer;
 
 		MadgwickAHRSupdate(&gStateData, &gSensorData);
 		compute_euler_angles( &gStateData );
-		gStateData.estRuntime = TIM_GetCounter(TIM2) - last_timer;
+		gStateData.estRuntime = TIM_GetCounter(TIM5) - last_timer;
 
 		chEvtBroadcastFlags(&eventEKFDone, EVT_EKF_DONE);
 	}

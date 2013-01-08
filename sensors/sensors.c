@@ -63,7 +63,7 @@ static msg_t PollIMUThread(void *arg){
 		chEvtGetAndClearFlags(&self_el1);
 		chEvtGetAndClearFlags(&self_el2);
 
-		current_timer = TIM_GetCounter(TIM2);
+		current_timer = TIM_GetCounter(TIM5);
 		gSensorData.imuFrequency = 1.0 / ((current_timer - last_timer) / 1e6);
 		last_timer = current_timer;
 
@@ -119,7 +119,7 @@ static msg_t PollMagnThread(void *arg){
 		chEvtGetAndClearFlags(&self_el1);
 		chEvtGetAndClearFlags(&self_el2);
 
-		current_timer = TIM_GetCounter(TIM2);
+		current_timer = TIM_GetCounter(TIM5);
 		gSensorData.magFrequency = 1.0 / ((current_timer - last_timer) / 1e6);
 		last_timer = current_timer;
 
@@ -153,7 +153,7 @@ static msg_t PollBaroThread(void *arg){
 	uint32_t last_timer, current_timer;
 
 	while (TRUE) {
-		current_timer = TIM_GetCounter(TIM2);
+		current_timer = TIM_GetCounter(TIM5);
 		gSensorData.barFrequency = 1.0 / ((current_timer - last_timer) / 1e6);
 		last_timer = current_timer;
 		ms561101ba_readValues(&gSensorData.barPressure, &gSensorData.barTemperature, MS561101BA_OSR_4096);
