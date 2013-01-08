@@ -132,9 +132,9 @@ static msg_t PollMagnThread(void *arg){
 			gSensorData.raw_mag_x = sum[7] / count[1];
 			gSensorData.raw_mag_y = sum[8] / count[1];
 			gSensorData.raw_mag_z = sum[9] / count[1];
+			sum[7] = 0;
 			sum[8] = 0;
 			sum[9] = 0;
-			sum[0] = 0;
 			chEvtBroadcastFlags(&eventMagnRead, EVT_MAGN_READ);
 			count[1] = 0;
 		}
@@ -293,7 +293,7 @@ void initSensors(void) {
 	hmc5883l_initialize();
 	if (hmc5883l_testConnection() != 1)
 		chDbgPanic("HMC5883L: not found");
-	hmc5883l_calibrate(HMC5883L_GAIN_1090);
+	//hmc5883l_calibrate(HMC5883L_GAIN_1090);
 	hmc5883l_setSampleAveraging(HMC5883L_AVERAGING_8);
 	hmc5883l_setDataRate(HMC5883L_RATE_75);
 	hmc5883l_setMeasurementBias(HMC5883L_BIAS_NORMAL);
