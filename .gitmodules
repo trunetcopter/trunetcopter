@@ -1,0 +1,3 @@
+[submodule "24aa"]
+	path = 24aa
+	url = git@github.com:trunet/24aa.git
