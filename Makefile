@@ -88,6 +88,7 @@ CSRC = $(PORTSRC) \
        24aa/eeprom.c \
        $(wildcard attitude_estimation/*.c) \
        $(wildcard sensors/*.c) \
+       $(wildcard radio/*.c) \
        $(wildcard *.c)
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
