@@ -5,8 +5,14 @@ if [[ -z "$BUILD_DIR" ]]; then
         exit 1
 fi
 
+if [[ -f /sw/bin/gdu ]]; then
+  DU="gdu"
+else
+  DU="du"
+fi
+
 FLASH_SIZE=1048576
-FLASH_USED=`du -b $BUILD_DIR/trunetcopter.bin | gawk '{print$1}'`
+FLASH_USED=`$DU -b $BUILD_DIR/trunetcopter.bin | gawk '{print$1}'`
 
 RAM_SIZE=`cat $BUILD_DIR/trunetcopter.map | grep "__ram_size__ =" | gawk '{print$1}'`
 RAM_USED=`arm-none-eabi-size $BUILD_DIR/trunetcopter.elf | tail -1 | awk '{print $2+$3}'`
