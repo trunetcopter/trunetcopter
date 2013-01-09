@@ -85,6 +85,7 @@ CSRC = $(PORTSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/chprintf.c \
+       24aa/eeprom.c \
        $(wildcard attitude_estimation/*.c) \
        $(wildcard sensors/*.c) \
        $(wildcard *.c)
@@ -119,7 +120,7 @@ ASMSRC = $(PORTASM)
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
          $(CHIBIOS)/os/various \
-         config mavlink mavlink/common
+         . 24aa config mavlink mavlink/common
 
 #
 # Project, sources and paths
