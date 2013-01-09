@@ -70,6 +70,24 @@ typedef struct __sensorData {
     float imuFrequency;
     float magFrequency;
     float barFrequency;
+
+    // GPS Data
+	int32_t longitude;   // longitude*1e6
+	int32_t latitude;   // latitude*1e6
+	float altitude; // altitude in meters
+	float speed; // speed in km/h
+	float heading; // heading
+	uint8_t satellites; // number of satellites
+	uint8_t fix; // fix type
+	uint32_t utc_date;
+	uint32_t utc_time;
+	uint32_t time; // milliseconds from epoch
+	uint16_t hdop; //Horizontal Dilution of Precision
+
+	float v_lon;
+	float v_lat;
+
+	char  valid;
 } sensorData;
 
 extern sensorData gSensorData;

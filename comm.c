@@ -34,6 +34,9 @@ msg_t noticeBuf[MAVLINK_NOTICE_LEN];
 mavlinkStruct_t mavlinkData;
 mavlink_system_t mavlink_system;
 
+static Thread *IdleThread_p = NULL;
+static uint32_t last_idle_ticks = 0;
+
 void comm_send_ch(mavlink_channel_t chan, uint8_t ch) {
 	if (chan == MAVLINK_COMM_0) {
 		sdWrite(mavlinkData.serialPort, &ch, 1);
@@ -45,6 +48,22 @@ void mavlinkNotice(const char *s) {
 	chMBPost(mavlinkData.noticeQueue, (msg_t)&s, TIME_IMMEDIATE);
 }
 
+uint16_t get_cpu_load(void){
+
+  uint32_t i, s;
+
+  if (chThdGetTicks(IdleThread_p) >= last_idle_ticks)
+    i = chThdGetTicks(IdleThread_p) - last_idle_ticks;
+  else /* overflow */
+    i = chThdGetTicks(IdleThread_p) + (0xFFFFFFFF - last_idle_ticks);
+
+  last_idle_ticks = chThdGetTicks(IdleThread_p);
+
+  s = chTimeNow();
+
+  return ((s - i) * 1000) / s;
+}
+
 static WORKING_AREA(waThreadMavlink, MAVLINK_STACK_SIZE);
 static msg_t ThreadMavlink(void *arg) {
         (void)arg;
@@ -53,6 +72,8 @@ static msg_t ThreadMavlink(void *arg) {
 	static unsigned long lastMillis = 0;
 	unsigned long millis;
 	mavlinkNotice("MavLink Initialized!");
+
+	IdleThread_p = chSysGetIdleThread();
 
         while (TRUE) {
 		millis = chTimeNow();
@@ -67,27 +88,7 @@ static msg_t ThreadMavlink(void *arg) {
 		// heartbeat
 		if (mavlinkData.nextHeartbeat < millis) {
 			mavlink_msg_heartbeat_send(MAVLINK_COMM_0, mavlink_system.type, MAV_AUTOPILOT_GENERIC_MISSION_FULL, mavlinkData.mode, mavlinkData.nav_mode, mavlinkData.status);
-
-			/*
-			Thread *thd = chRegFirstThread();
-			systime_t total = 0;
-			//systime_t totalIdle = 0;
-
-			do {
-				if (!(strcmp(thd->p_name, "idle") == 0)) {
-					total += chThdGetTicks(thd);
-				}// else {
-				//	totalIdle = chThdGetTicks(thd);
-				//}
-			} while((thd = chRegNextThread(thd)));
-			*/
-			systime_t total = 400;
-
-			systime_t totalTicks = chTimeNow();
-			mavlinkData.idlePercent = (int)(((float)total*1000)/(float)totalTicks);
-
-			mavlink_msg_sys_status_send(MAVLINK_COMM_0, 0, 0, 0, mavlinkData.idlePercent, -1, -1, -1, 0, mavlinkData.packetDrops, 0, 0, 0, 0);
-
+			mavlink_msg_sys_status_send(MAVLINK_COMM_0, 0, 0, 0, get_cpu_load(), -1, -1, -1, 0, mavlinkData.packetDrops, 0, 0, 0, 0);
 			mavlinkData.nextHeartbeat = millis + MAVLINK_HEARTBEAT_INTERVAL;
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] < millis) {
 			mavlink_msg_rc_channels_raw_send(MAVLINK_COMM_0, millis, 0, RADIO_THROT+1024, RADIO_ROLL+1024, RADIO_PITCH+1024, RADIO_RUDD+1024, RADIO_GEAR+1024, RADIO_FLAPS+1024, RADIO_AUX2+1024, RADIO_AUX3+1024, RADIO_QUALITY);

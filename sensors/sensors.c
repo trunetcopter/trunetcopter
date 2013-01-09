@@ -26,6 +26,7 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include "imu_mpu6050.h"
 #include "magn_hmc5883l.h"
 #include "press_ms561101ba.h"
+#include "gps_mt3329.h"
 
 #include "../attitude_estimation/estimation.h"
 
@@ -252,7 +253,7 @@ void computeGyroRTBias(void) {
 
 	int16_t gx, gy, gz;
 
-	for (samples = 0; samples < 2000; samples++) {
+	for (samples = 0; samples < 1000; samples++) {
 		mpu6050_getRotation(&gx, &gy, &gz);
 		gSensorData.imuTemperature = mpu6050_getTemperature();
 
@@ -304,4 +305,6 @@ void initSensors(void) {
 	//if (ms561101ba_crc() != 1)
 	//	chDbgPanic("MS5611-01BA: PROM CRC mismatch");
 	ms561101ba_setOverSampleRate(MS561101BA_OSR_4096);
+
+	gps_mtk_start();
 }
