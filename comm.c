@@ -98,6 +98,7 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis*1000, gSensorData.raw_acc_x, gSensorData.raw_acc_y, gSensorData.raw_acc_z, gSensorData.raw_gyr_x, gSensorData.raw_gyr_y, gSensorData.raw_gyr_z, gSensorData.raw_mag_x, gSensorData.raw_mag_y, gSensorData.raw_mag_z);
 			mavlink_msg_scaled_imu_send(MAVLINK_COMM_0, millis, gSensorData.scaled_acc_x*1000.0f, gSensorData.scaled_acc_y * 1000.0f, gSensorData.scaled_acc_z * 1000.0f, gSensorData.scaled_gyr_x * 1000.0f, gSensorData.scaled_gyr_y * 1000.0f, gSensorData.scaled_gyr_z * 1000.0f, gSensorData.scaled_mag_x, gSensorData.scaled_mag_y, gSensorData.scaled_mag_z);
 			mavlink_msg_scaled_pressure_send(MAVLINK_COMM_0, millis, gSensorData.barPressure, 0.0f, gSensorData.barTemperature);
+			mavlink_msg_gps_raw_int_send(MAVLINK_COMM_0, gSensorData.utc_time, gSensorData.fix, gSensorData.latitude, gSensorData.longitude, gSensorData.altitude*1000, gSensorData.hdop, 65535, ((float)gSensorData.speed * 3.6f) * 100, gSensorData.heading * 100, gSensorData.satellites);
 			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS];
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_CONTROLLER]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_CONTROLLER] < millis) {
 			mavlink_msg_attitude_send(MAVLINK_COMM_0, millis, gStateData.roll, (float)gStateData.pitch, gStateData.yaw, gStateData.roll_rate, gStateData.pitch_rate, gStateData.yaw_rate);

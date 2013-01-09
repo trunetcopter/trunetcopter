@@ -123,11 +123,13 @@ void gps_mtk_start(void) {
 	};
 	sdStart(&GPS_SERIAL_DEVICE, &GPSPortConfig);
 
+	chThdSleepMilliseconds(500);
+
 	// initialize serial port for binary protocol use
 	chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_SET_BINARY);
 
 	// set 4Hz update rate
-	chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_OUTPUT_10HZ);
+	chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_OUTPUT_4HZ);
 
 	chThdCreateStatic(PollGPSThreadWA,
 			sizeof(PollGPSThreadWA),
