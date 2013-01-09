@@ -21,7 +21,7 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 #include "util.h"
-#include "radio.h"
+#include "radio/radio.h"
 #include "sensors/sensors.h"
 
 #include "attitude_estimation/estimation.h"

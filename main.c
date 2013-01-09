@@ -30,7 +30,7 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "util.h"
 #include "comm.h"
-#include "radio.h"
+#include "radio/radio.h"
 
 extern EventSource eventImuIrq;
 extern EventSource eventMagnIrq;

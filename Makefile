@@ -88,6 +88,7 @@ CSRC = $(PORTSRC) \
        24aa/eeprom.c \
        $(wildcard attitude_estimation/*.c) \
        $(wildcard sensors/*.c) \
+       $(wildcard radio/*.c) \
        $(wildcard *.c)
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
@@ -227,3 +228,11 @@ ifeq ($(USE_FWLIB),yes)
 endif
 
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
+
+######## resource usage show ################
+MAKE_ALL_RULE_HOOK: res_usage
+
+res_usage: $(BUILDDIR)/$(PROJECT).bin $(BUILDDIR)/$(PROJECT).elf \
+                        $(BUILDDIR)/$(PROJECT).hex $(BUILDDIR)/$(PROJECT).dmp
+	./scripts/res_usage.sh $(BUILDDIR)
+
