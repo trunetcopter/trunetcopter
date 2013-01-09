@@ -227,3 +227,11 @@ ifeq ($(USE_FWLIB),yes)
 endif
 
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
+
+######## resource usage show ################
+MAKE_ALL_RULE_HOOK: res_usage
+
+res_usage: $(BUILDDIR)/$(PROJECT).bin $(BUILDDIR)/$(PROJECT).elf \
+                        $(BUILDDIR)/$(PROJECT).hex $(BUILDDIR)/$(PROJECT).dmp
+	./scripts/res_usage.sh $(BUILDDIR)
+
