@@ -31,6 +31,7 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include "util.h"
 #include "comm.h"
 #include "radio/radio.h"
+#include "motors/motors.h"
 
 extern EventSource eventImuIrq;
 extern EventSource eventMagnIrq;
@@ -84,34 +85,24 @@ void hmc5883l_interrupt_handler(EXTDriver *extp, expchannel_t channel) {
 	chSysUnlockFromIsr();
 }
 
-static const EXTConfig extcfg = { { { EXT_CH_MODE_FALLING_EDGE
-		| EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, mpu6050_interrupt_handler }, {
-		EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC,
-		hmc5883l_interrupt_handler }, { EXT_CH_MODE_DISABLED, NULL }, {
-		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
-		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
-		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
-		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
-		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
-		EXT_CH_MODE_DISABLED, NULL }, { EXT_CH_MODE_DISABLED, NULL }, {
-		EXT_CH_MODE_DISABLED, NULL } },
-//EXT_MODE_EXTI(0, /* 0 */
-//			  0, /* 1 */
-//			  0, /* 2 */
-//			  0, /* 3 */
-//			  EXT_MODE_GPIOB, /* 4 */
-//			  EXT_MODE_GPIOB, /* 5 */
-//			  0, /* 6 */
-//			  0, /* 7 */
-//			  0, /* 8 */
-//			  0, /* 9 */
-//			  0, /* 10 */
-//			  0, /* 11 */
-//			  0, /* 12 */
-//			  0, /* 13 */
-//			  0, /* 14 */
-//			  0) /* 15 */
-		};
+static const EXTConfig extcfg = { {
+		{ EXT_CH_MODE_FALLING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, mpu6050_interrupt_handler },
+		{ EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, hmc5883l_interrupt_handler },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL },
+		{ EXT_CH_MODE_DISABLED, NULL }
+},};
 
 /*
  * Application entry point.
@@ -157,6 +148,7 @@ int main(void) {
 	startSensors();
 	mavlinkInit();
 	radioInit();
+	motorsInit();
 
 	extStart(&EXTD1, &extcfg);
 	extChannelEnable(&EXTD1, 0);

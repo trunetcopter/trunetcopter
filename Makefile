@@ -87,8 +87,9 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/chprintf.c \
        24aa/eeprom.c \
        $(wildcard attitude_estimation/*.c) \
-       $(wildcard sensors/*.c) \
+       $(wildcard motors/*.c) \
        $(wildcard radio/*.c) \
+       $(wildcard sensors/*.c) \
        $(wildcard *.c)
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

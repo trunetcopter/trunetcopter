@@ -66,8 +66,8 @@
 #define GPIOA_SWDIO             13
 #define GPIOA_SWCLK             14
 
-#define GPIOB_USART1_TX		6
-#define GPIOB_USART1_RX		7
+#define GPIOB_USART1_TX			6
+#define GPIOB_USART1_RX			7
 #define GPIOB_SCL               8
 #define GPIOB_SDA               9
 #define GPIOB_TIM2_CH3          10
@@ -122,8 +122,8 @@
                                      PIN_MODE_INPUT(10) |                  \
                                      PIN_MODE_INPUT(11) |                  \
                                      PIN_MODE_INPUT(12) |                  \
-        	                     PIN_MODE_ALTERNATE(GPIOA_SWDIO) |     \
-	                             PIN_MODE_ALTERNATE(GPIOA_SWCLK) |     \
+                                     PIN_MODE_ALTERNATE(GPIOA_SWDIO) |     \
+                                     PIN_MODE_ALTERNATE(GPIOA_SWCLK) |     \
                                      PIN_MODE_INPUT(15))
 #define VAL_GPIOA_OTYPER            0x00000000
 #define VAL_GPIOA_OSPEEDR           0xFFFFFFFF
@@ -145,11 +145,11 @@
                                      PIN_PUDR_PULLUP(15))
 #define VAL_GPIOA_ODR               0xFFFFFFFF
 #define VAL_GPIOA_AFRL              (PIN_AFIO_AF(GPIOA_TIM2_CH1, 1) |  \
-				     PIN_AFIO_AF(GPIOA_TIM2_CH2, 1) |  \
-				     PIN_AFIO_AF(GPIOA_USART2_TX, 7) | \
-				     PIN_AFIO_AF(GPIOA_USART2_RX, 7))
+				     	 	 	 	 PIN_AFIO_AF(GPIOA_TIM2_CH2, 1) |  \
+				     	 	 	 	 PIN_AFIO_AF(GPIOA_USART2_TX, 7) | \
+				     	 	 	 	 PIN_AFIO_AF(GPIOA_USART2_RX, 7))
 #define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_SWDIO, 0) |     \
-	                             PIN_AFIO_AF(GPIOA_SWCLK, 0))
+	                             	 PIN_AFIO_AF(GPIOA_SWCLK, 0))
 
 /*
  * Port B setup.
@@ -194,13 +194,13 @@
                                      PIN_PUDR_FLOATING(GPIOB_OTG_FS_DP))
 #define VAL_GPIOB_ODR               0xFFFFFFFF
 #define VAL_GPIOB_AFRL              (PIN_AFIO_AF(GPIOB_USART1_TX, 7) |  \
-				     PIN_AFIO_AF(GPIOB_USART1_RX, 7))
+				     	 	 	 	 PIN_AFIO_AF(GPIOB_USART1_RX, 7))
 #define VAL_GPIOB_AFRH              (PIN_AFIO_AF(GPIOB_TIM2_CH3, 1) |   \
-				     PIN_AFIO_AF(GPIOB_TIM2_CH4, 1) |   \
+				     	 	 	 	 PIN_AFIO_AF(GPIOB_TIM2_CH4, 1) |   \
                                      PIN_AFIO_AF(GPIOB_SDA, 4) |        \
                                      PIN_AFIO_AF(GPIOB_SCL, 4) |        \
-				     PIN_AFIO_AF(GPIOB_OTG_FS_DM, 10) | \
-				     PIN_AFIO_AF(GPIOB_OTG_FS_DP, 10))
+                                     PIN_AFIO_AF(GPIOB_OTG_FS_DM, 10) | \
+                                     PIN_AFIO_AF(GPIOB_OTG_FS_DP, 10))
 
 /*
  * Port C setup.
