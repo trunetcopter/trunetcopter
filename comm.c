@@ -93,7 +93,7 @@ static msg_t ThreadMavlink(void *arg) {
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] < millis) {
 			mavlink_msg_rc_channels_raw_send(MAVLINK_COMM_0, millis, 0, RADIO_THROT+1024, RADIO_ROLL+1024, RADIO_PITCH+1024, RADIO_RUDD+1024, RADIO_GEAR+1024, RADIO_FLAPS+1024, RADIO_AUX2+1024, RADIO_AUX3+1024, RADIO_QUALITY);
 			mavlink_msg_rc_channels_scaled_send(MAVLINK_COMM_0, millis, 0, (RADIO_THROT-750)*13, RADIO_ROLL*13, RADIO_PITCH*13, RADIO_RUDD*13, RADIO_GEAR*13, RADIO_FLAPS*13, RADIO_AUX2*13, RADIO_AUX3*13, RADIO_QUALITY);
-			mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS];
+			mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS] + 400;
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_SENSORS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RAW_SENSORS] < millis) {
 			mavlink_msg_raw_imu_send(MAVLINK_COMM_0, millis*1000, gSensorData.raw_acc_x, gSensorData.raw_acc_y, gSensorData.raw_acc_z, gSensorData.raw_gyr_x, gSensorData.raw_gyr_y, gSensorData.raw_gyr_z, gSensorData.raw_mag_x, gSensorData.raw_mag_y, gSensorData.raw_mag_z);
 			mavlink_msg_scaled_imu_send(MAVLINK_COMM_0, millis, gSensorData.scaled_acc_x*1000.0f, gSensorData.scaled_acc_y * 1000.0f, gSensorData.scaled_acc_z * 1000.0f, gSensorData.scaled_gyr_x * 1000.0f, gSensorData.scaled_gyr_y * 1000.0f, gSensorData.scaled_gyr_z * 1000.0f, gSensorData.scaled_mag_x, gSensorData.scaled_mag_y, gSensorData.scaled_mag_z);

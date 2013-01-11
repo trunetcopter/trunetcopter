@@ -50,18 +50,10 @@ static msg_t Thread1(void *arg) {
 	chRegSetThreadName("blinker");
 
 	while (TRUE) {
-		//palSetPad(GPIOD, GPIOD_LED3);       /* Orange */
-		//palSetPad(GPIOD, GPIOD_LED4);
-		/* Green  */
-		//palSetPad(GPIOD, GPIOD_LED5);       /* Red    */
-		//palSetPad(GPIOD, GPIOD_LED6);       /* Blue   */
-		//chThdSleepMilliseconds(500);
-		//palClearPad(GPIOD, GPIOD_LED3);     /* Orange */
-		//palClearPad(GPIOD, GPIOD_LED4);
-		/* Green  */
-		//palClearPad(GPIOD, GPIOD_LED5);     /* Red    */
-		//palClearPad(GPIOD, GPIOD_LED6);     /* Blue   */
-		chThdSleepMilliseconds(500);
+		palSetPad(GPIOB, 5);
+		chThdSleepMilliseconds(250);
+		palClearPad(GPIOB, 5);
+		chThdSleepMilliseconds(250);
 	}
 
 	return 0;
@@ -124,6 +116,10 @@ int main(void) {
 	chEvtInit(&eventImuRead);
 	chEvtInit(&eventMagnRead);
 	chEvtInit(&eventEKFDone);
+
+	palSetPadMode(GPIOB, 3, PAL_MODE_OUTPUT_PUSHPULL); // BLUE
+	palSetPadMode(GPIOB, 4, PAL_MODE_OUTPUT_PUSHPULL); // GREEN
+	palSetPadMode(GPIOB, 5, PAL_MODE_OUTPUT_PUSHPULL); // RED
 
 	I2CInitLocal();
 

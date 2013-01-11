@@ -26,18 +26,10 @@ int futabaDecode(void) {
     if (futabaData.u.rawBuf[22] & 0b0100) {
     	return -1;
     } else {
-		//radioData.channels[0] = 1696 - futabaData.u.channels.channel3;
-		//radioData.channels[1] = futabaData.u.channels.channel1 - 1024;
-		//radioData.channels[2] = futabaData.u.channels.channel2 - 1024;
-		//radioData.channels[3] = futabaData.u.channels.channel4 - 1024;
-    	//radioData.channels[0] = 1024 - futabaData.u.channels.channel1;
-    	//radioData.channels[1] = 1024 - futabaData.u.channels.channel2;
-    	//radioData.channels[2] = 1024 - futabaData.u.channels.channel3;
-    	//radioData.channels[3] = 1024 - futabaData.u.channels.channel4;
-    	radioData.channels[0] = 1696 - futabaData.u.channels.channel1;
-    	radioData.channels[1] = futabaData.u.channels.channel2 - 1024;
-    	radioData.channels[2] = futabaData.u.channels.channel3 - 1024;
-    	radioData.channels[3] = futabaData.u.channels.channel4 - 1024;
+		radioData.channels[0] = 1696 - futabaData.u.channels.channel3;
+		radioData.channels[1] = futabaData.u.channels.channel1 - 1024;
+		radioData.channels[2] = futabaData.u.channels.channel2 - 1024;
+		radioData.channels[3] = futabaData.u.channels.channel4 - 1024;
 		radioData.channels[4] = 1024 - futabaData.u.channels.channel5;
 		radioData.channels[5] = 1024 - futabaData.u.channels.channel6;
 		radioData.channels[6] = 1024 - futabaData.u.channels.channel7;
@@ -95,6 +87,4 @@ void futabaInit(void) {
 	};
 	radioData.serialPort = &FUTABA_SERIAL_DEVICE;
 	sdStart(radioData.serialPort, &sbusPortConfig);
-	//palSetPadMode(GPIOB, 6, PAL_MODE_ALTERNATE(7)); //TX
-	//palSetPadMode(GPIOB, 7, PAL_MODE_ALTERNATE(7)); //RX
 }
