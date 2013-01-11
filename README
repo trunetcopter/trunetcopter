@@ -5,7 +5,7 @@ S.BUS RX and 24LC256 EEPROM and up to 8 PWM motors.
 
 Some code and ideas from:
 - MultiWii
-- Aeroquad
+- Autoquad
 - Diydrones Arducopter
 - Madgwick
 - Baseflight/Baseflightplus from afrodevices T.C.
