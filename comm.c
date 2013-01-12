@@ -108,18 +108,33 @@ msg_t mavlinkNotice(uint8_t severity, const char *text) {
 	return status;
 }
 
+systime_t GetTimeInterval(systime_t *last){
+  systime_t t = 0;
+
+  if (chTimeNow() >= *last)
+    t = chTimeNow() - *last;
+  else /* overflow happens */
+    t = chTimeNow() + (0xFFFFFFFF - *last);
+  /* refresh last value */
+  *last = chTimeNow();
+  return t;
+}
+
 uint16_t get_cpu_load(void){
 
   uint32_t i, s;
+  systime_t ticks;
 
-  if (chThdGetTicks(IdleThread_p) >= last_idle_ticks)
-    i = chThdGetTicks(IdleThread_p) - last_idle_ticks;
+  ticks = chThdGetTicks(IdleThread_p);
+
+  if (ticks >= last_idle_ticks)
+    i = ticks - last_idle_ticks;
   else /* overflow */
-    i = chThdGetTicks(IdleThread_p) + (0xFFFFFFFF - last_idle_ticks);
+    i = ticks + (0xFFFFFFFF - last_idle_ticks);
 
-  last_idle_ticks = chThdGetTicks(IdleThread_p);
+  last_idle_ticks = ticks;
 
-  s = chTimeNow();
+  s = GetTimeInterval(0);
 
   return ((s - i) * 1000) / s;
 }
