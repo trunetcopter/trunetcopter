@@ -19,6 +19,9 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include "radio.h"
 #include <string.h>
 
+#include "comm.h"
+#include "mavlink.h"
+
 radioStruct_t radioData __attribute__((section(".ccm")));
 
 // calculate radio reception quality
@@ -35,6 +38,8 @@ static msg_t ThreadRadio(void *arg) {
 	if (radioData.radioType == 1 || radioData.radioType == 2) {
 		chEvtRegisterMask((EventSource *)chnGetEventSource(radioData.serialPort), &elRadio, 1);
 	}
+
+	mavlinkNotice(MAV_SEVERITY_INFO, "Radio Polling Initialized!");
 
 	while (TRUE) {
 		if (radioData.radioType == 1 || radioData.radioType == 2) {
@@ -72,7 +77,7 @@ static msg_t ThreadRadio(void *arg) {
 }
 
 void radioInit(void) {
-    //AQ_NOTICE("Radio init\n");
+	mavlinkNotice(MAV_SEVERITY_INFO, "Radio Initialized!");
 
     memset((void *)&radioData, 0, sizeof(radioData));
 

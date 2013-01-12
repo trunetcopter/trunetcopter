@@ -24,6 +24,9 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <math.h>
 
+#include "comm.h"
+#include "mavlink.h"
+
 #include "sensors.h"
 #include "gps_mt3329.h"
 
@@ -103,6 +106,8 @@ static msg_t PollGPSThread(void *arg){
 	#define NMEA_BUF_SIZE 80
 	char nmea_buf[NMEA_BUF_SIZE];
 	int ptr=0;
+
+	mavlinkNotice(MAV_SEVERITY_INFO, "GPS Polling Initialized!");
 
 	while (TRUE) {
 		flagsmask_t flags;

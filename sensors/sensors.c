@@ -21,6 +21,9 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #include <string.h>
 
+#include "comm.h"
+#include "mavlink.h"
+
 #include "sensors.h"
 
 #include "imu_mpu6050.h"
@@ -58,6 +61,8 @@ static msg_t PollIMUThread(void *arg){
 	chEvtRegister(&eventEKFDone, &self_el2, EVT_EKF_DONE);
 
 	uint32_t last_timer, current_timer;
+
+	mavlinkNotice(MAV_SEVERITY_INFO, "IMU Polling Initialized!");
 
 	while (TRUE) {
 		chEvtWaitAll(EVENT_MASK(EVT_IMU_IRQ) | EVENT_MASK(EVT_EKF_DONE));
@@ -114,6 +119,8 @@ static msg_t PollMagnThread(void *arg){
 	chEvtRegister(&eventEKFDone, &self_el2, EVT_EKF_DONE);
 
 	uint32_t last_timer, current_timer;
+
+	mavlinkNotice(MAV_SEVERITY_INFO, "Magnetometer Polling Initialized!");
 
 	while (TRUE) {
 		chEvtWaitAll(EVENT_MASK(EVT_MAGN_IRQ) | EVENT_MASK(EVT_EKF_DONE));
@@ -282,7 +289,8 @@ void initSensors(void) {
 
 	mpu6050_initialize();
 	if (mpu6050_testConnection() != 1)
-		chDbgPanic("MPU6050: not found");
+		//chDbgPanic("MPU6050: not found");
+		mavlinkNotice(MAV_SEVERITY_EMERGENCY, "MPU6050: not found");
 	mpu6050_setRate(0x04); // Sample rate = 200Hz    Fsample= 1Khz/(4+1) = 200Hz
 	mpu6050_setDLPFMode(MPU6050_DLPF_BW_98);
 	mpu6050_setIntEnabled(1);
@@ -293,7 +301,8 @@ void initSensors(void) {
 
 	hmc5883l_initialize();
 	if (hmc5883l_testConnection() != 1)
-		chDbgPanic("HMC5883L: not found");
+		//chDbgPanic("HMC5883L: not found");
+		mavlinkNotice(MAV_SEVERITY_EMERGENCY, "HMC5883L: not found");
 	//hmc5883l_calibrate(HMC5883L_GAIN_1090);
 	hmc5883l_setSampleAveraging(HMC5883L_AVERAGING_8);
 	hmc5883l_setDataRate(HMC5883L_RATE_75);

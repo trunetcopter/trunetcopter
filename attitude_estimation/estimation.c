@@ -22,6 +22,9 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "stm32f4xx_tim.h"
 
+#include "comm.h"
+#include "mavlink.h"
+
 #include "../util.h"
 #include "../sensors/sensors.h"
 
@@ -272,6 +275,8 @@ static msg_t PollAttitudeThread(void *arg){
 	gStateData.beta = betaDef;
 
 	uint32_t last_timer, current_timer;
+
+	mavlinkNotice(MAV_SEVERITY_INFO, "Attitude Estimation Initialized!");
 
 	while (TRUE) {
 		chEvtWaitAll(EVENT_MASK(EVT_IMU_READ) | EVENT_MASK(EVT_MAGN_READ));

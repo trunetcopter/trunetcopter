@@ -123,6 +123,8 @@ int main(void) {
 
 	I2CInitLocal();
 
+	configInit();
+	mavlinkInit();
 	initSensors();
 
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
@@ -139,10 +141,8 @@ int main(void) {
 	 */
 	chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL );
 
-	configInit();
 	startEstimation();
 	startSensors();
-	mavlinkInit();
 	radioInit();
 	motorsInit();
 

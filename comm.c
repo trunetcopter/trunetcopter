@@ -17,19 +17,18 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "comm.h"
 
-#include "mavlink.h"
-
 #include "config.h"
 #include "util.h"
 #include "radio/radio.h"
 #include "sensors/sensors.h"
 
+#include "mavlink.h"
+#include "mavlink_types.h"
+
 #include "attitude_estimation/estimation.h"
 
 extern sensorData gSensorData;
 extern AHRS_state_data gStateData;
-
-msg_t noticeBuf[MAVLINK_NOTICE_LEN];
 
 mavlinkStruct_t mavlinkData;
 mavlink_system_t mavlink_system;
@@ -37,15 +36,76 @@ mavlink_system_t mavlink_system;
 static Thread *IdleThread_p = NULL;
 static uint32_t last_idle_ticks = 0;
 
+Mailbox mbNotice;
+Mailbox mbImu;
+Mailbox mbMagn;
+Mailbox mbGps;
+static msg_t mbNoticeBuf[8];
+static msg_t mbImuBuf[1];
+static msg_t mbMagnBuf[1];
+static msg_t mbGpsBuf[1];
+
+mavlink_statustext_t mavlink_statustext_struct;
+
+static Mail statustext_mail = {NULL, MAVLINK_MSG_ID_STATUSTEXT, NULL};
+static BinarySemaphore semStatustext;
+
+/**
+ * Signal processing thread about end of data processing
+ */
+void ReleaseMail(Mail* mailp){
+  mailp->payload = NULL;
+  if (mailp->semp != NULL)
+    chBSemSignal(mailp->semp);
+}
+
+/**
+ *
+ */
+void MsgInit(void){
+	chBSemInit(&semStatustext, FALSE);
+	chMBInit(&mbNotice,
+		   mbNoticeBuf,
+		   (sizeof(mbNoticeBuf)/sizeof(msg_t)));
+	chMBInit(&mbImu,
+  		   mbImuBuf,
+  		   (sizeof(mbImuBuf)/sizeof(msg_t)));
+	chMBInit(&mbMagn,
+  		   mbMagnBuf,
+  		   (sizeof(mbMagnBuf)/sizeof(msg_t)));
+	chMBInit(&mbGps,
+  		   mbGpsBuf,
+  		   (sizeof(mbGpsBuf)/sizeof(msg_t)));
+}
+
 void comm_send_ch(mavlink_channel_t chan, uint8_t ch) {
 	if (chan == MAVLINK_COMM_0) {
 		sdWrite(mavlinkData.serialPort, &ch, 1);
 	}
 }
 
-void mavlinkNotice(const char *s) {
-	// queue message, notify and leave
-	chMBPost(mavlinkData.noticeQueue, (msg_t)&s, TIME_IMMEDIATE);
+msg_t mavlinkNotice(uint8_t severity, const char *text) {
+	uint32_t n = sizeof(mavlink_statustext_struct.text);
+	msg_t status = RDY_RESET;
+
+	status = chBSemWaitTimeout(&semStatustext, MS2ST(1000));
+	if (status != RDY_OK){
+		chBSemSignal(&semStatustext);
+		return status;
+	}
+
+	mavlink_statustext_struct.severity = severity;
+	memset(mavlink_statustext_struct.text, 0, n);
+	memcpy(mavlink_statustext_struct.text, text, n);
+
+	statustext_mail.payload = &mavlink_statustext_struct;
+	statustext_mail.semp = &semStatustext;
+	status = chMBPost(&mbNotice, (msg_t)&statustext_mail, TIME_IMMEDIATE);
+	if (status != RDY_OK){
+		chBSemSignal(&semStatustext);
+		return status;
+	}
+	return status;
 }
 
 uint16_t get_cpu_load(void){
@@ -71,7 +131,7 @@ static msg_t ThreadMavlink(void *arg) {
 
 	static unsigned long lastMillis = 0;
 	unsigned long millis;
-	mavlinkNotice("MavLink Initialized!");
+	mavlinkNotice(MAV_SEVERITY_INFO, "MavLink Initialized!");
 
 	IdleThread_p = chSysGetIdleThread();
 
@@ -107,9 +167,16 @@ static msg_t ThreadMavlink(void *arg) {
 			mavlinkData.streamNext[MAV_DATA_STREAM_RAW_CONTROLLER] = millis + mavlinkData.streamInterval[MAV_DATA_STREAM_RAW_CONTROLLER];
 	    }
 
+		mavlink_statustext_t *statustext = NULL;
+		Mail *mailp;
+		msg_t tmp = 0;
 
-		if (chMBFetch(mavlinkData.noticeQueue, noticeBuf, TIME_IMMEDIATE) == RDY_OK) {
-			mavlink_msg_statustext_send(MAVLINK_COMM_0, 0, (const char *)noticeBuf);
+		if (chMBFetch(&mbNotice, &tmp, TIME_IMMEDIATE) == RDY_OK) {
+			mailp = (Mail*)tmp;
+			statustext = (mavlink_statustext_t *)mailp->payload;
+			mavlink_msg_statustext_send(MAVLINK_COMM_0, statustext->severity, statustext->text);
+			if (mailp->semp != NULL)
+				chBSemSignal(mailp->semp);
 		}
 
 		chThdSleepMilliseconds(10);
@@ -123,6 +190,7 @@ void mavlinkInit(void) {
 	int i;
 
 	memset((void *)&mavlinkData, 0, sizeof(mavlinkData));
+	MsgInit();
 
 	const SerialConfig mavlinkPortConfig = {
 		MAVLINK_SERIAL_BAUD,
@@ -144,8 +212,6 @@ void mavlinkInit(void) {
 	mavlinkData.mode = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
 	mavlinkData.nav_mode = MAV_STATE_STANDBY;
 	mavlinkData.status = MAV_STATE_ACTIVE;
-
-	chMBInit(mavlinkData.noticeQueue, (msg_t*)noticeBuf, MAVLINK_NOTICE_DEPTH);
 
 	millis = chTimeNow();
 	for (i = 1; i < 13; i++) {

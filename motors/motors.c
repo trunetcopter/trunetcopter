@@ -23,6 +23,9 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 
+#include "comm.h"
+#include "mavlink.h"
+
 motorsStruct_t motorsData __attribute__((section(".ccm")));
 
 // Plus configuration
@@ -181,7 +184,7 @@ void motorsInit(void) {
     float sumPitch, sumRoll, sumYaw;
     int i;
 
-    //AQ_NOTICE("Motors init\n");
+    mavlinkNotice(MAV_SEVERITY_INFO, "Motors Initialized!");
 
     memset((void *)&motorsData, 0, sizeof(motorsData));
 
@@ -234,18 +237,15 @@ void motorsInit(void) {
     }
 
     if (fabsf(sumPitch) > 0.01f)
-    	//AQ_NOTICE("Motors: Warning pitch control imbalance\n");
-    	chDbgPanic("Motors: Warning pitch control imbalance");
+    	mavlinkNotice(MAV_SEVERITY_WARNING, "Motors: Warning pitch control imbalance");
 
     if (fabsf(sumRoll) > 0.01f)
-    	//AQ_NOTICE("Motors: Warning roll control imbalance\n");
-    	chDbgPanic("Motors: Warning roll control imbalance");
+    	mavlinkNotice(MAV_SEVERITY_WARNING, "Motors: Warning roll control imbalance");
 
     if (fabsf(sumYaw) > 0.01f)
-    	//AQ_NOTICE("Motors: Warning yaw control imbalance\n");
-    	chDbgPanic("Motors: Warning yaw control imbalance");
+    	mavlinkNotice(MAV_SEVERITY_WARNING, "Motors: Warning yaw control imbalance");
 
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(100);
 
     motorsOff();
 }

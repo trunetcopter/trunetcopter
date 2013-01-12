@@ -22,26 +22,55 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 #include "hal.h"
 
 #include "config.h"
-#include "mavlink/mavlink_types.h"
+
+#include "mavlink_types.h"
+
+/*
+extern Mailbox mbNotice;
+extern Mailbox mbImu;
+extern Mailbox mbMagn;
+extern Mailbox mbGps;
+
+extern mavlink_statustext_t mavlink_statustext_struct;
+*/
+
+/**
+ * Structure for data exchange with confimation capability.
+ */
+typedef struct Mail Mail;
+struct Mail{
+  /**
+   * @brief   pointer to external buffer.
+   * @details When receiver got data it must be set this pointer to NULL
+   *          as a ready flag.
+   */
+  void *payload;
+  /**
+   * Content is on program responsibility. Can be contain anything.
+   */
+  msg_t invoice;
+  /**
+   * Protection semaphore.
+   * Set to NULL if unused.
+   */
+  BinarySemaphore *semp;
+};
+
+void ReleaseMail(Mail* mailp);
+void MsgInit(void);
 
 #define MAVLINK_STACK_SIZE		512
 #define MAVLINK_PRIORITY		NORMALPRIO
 
 #define MAVLINK_SERIAL_DEVICE		SD2
 #define MAVLINK_SERIAL_BAUD		115200
-#define MAVLINK_NOTICE_DEPTH		20
-#define MAVLINK_NOTICE_LEN		40
 
 #define MAVLINK_HEARTBEAT_INTERVAL	1000 // 1Hz
 
 #define MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-extern msg_t noticeBuf[MAVLINK_NOTICE_LEN];
-
 typedef struct {
 	SerialDriver *serialPort;
-
-	Mailbox noticeQueue[MAVLINK_NOTICE_DEPTH];
 
 	uint8_t mode;
 	uint8_t nav_mode;
@@ -61,7 +90,7 @@ extern mavlinkStruct_t mavlinkData;
 extern mavlink_system_t mavlink_system;
 
 extern void mavlinkInit(void);
-extern void mavlinkNotice(const char *s);
+extern msg_t mavlinkNotice(uint8_t severity, const char *text);
 extern void comm_send_ch(mavlink_channel_t chan, uint8_t ch);
 
 #endif
