@@ -136,22 +136,47 @@ static msg_t PollGPSThread(void *arg){
 }
 
 void gps_mtk_start(void) {
+	uint8_t i;
+	const long baudrates[5] = {9600U, 19200U, 38400U, 57600U, 115200U};
+	
+	for (i=0; i<4; i++) {
+		const SerialConfig GPSPortConfig = {
+		    baudrates[i],
+		    0,
+		    USART_CR2_STOP1_BITS | USART_CR2_LINEN,
+		    0
+		};
+		sdStart(&GPS_SERIAL_DEVICE, &GPSPortConfig);
 
-	const SerialConfig GPSPortConfig = {
-	    38400,
-	    0,
-	    USART_CR2_STOP1_BITS | USART_CR2_LINEN,
-	    0
-	};
-	sdStart(&GPS_SERIAL_DEVICE, &GPSPortConfig);
+		// initialize serial port for binary protocol use
+		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_SET_BINARY);
+		// set 5Hz update rate
+		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_OUTPUT_5HZ);
+		// set SBAS on
+		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, SBAS_ON);
+		// set WAAS on
+		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, WAAS_ON);
+		// Set Nav Threshold to 0 m/s
+		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_NAVTHRES_OFF);
 
-	chThdSleepMilliseconds(500);
+		int ptr = 0;
+		int32_t c = 0;
+		bool_t found_baud_rate = 0;
+		while (c != Q_TIMEOUT) {
+			c = chnGetTimeout(&GPS_SERIAL_DEVICE, MS2ST(100));
+			if ((ptr==0 && c==0xd0) || (ptr==1 && c==0xdd))
+                        	ptr++;
+                        else if (ptr > 1) {
+				found_baud_rate = 1;
+				break;
+                        } else
+				ptr = 0;
+		}
+		if (found_baud_rate == 1)
+			break;
 
-	// initialize serial port for binary protocol use
-	chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_SET_BINARY);
-
-	// set 4Hz update rate
-	chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_OUTPUT_4HZ);
+		sdStop(&GPS_SERIAL_DEVICE);
+	}
 
 	chThdCreateStatic(PollGPSThreadWA,
 			sizeof(PollGPSThreadWA),
