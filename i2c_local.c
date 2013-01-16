@@ -42,9 +42,16 @@ along with Trunetcopter.  If not, see <http://www.gnu.org/licenses/>.
 /* interface #1 */
 static const I2CConfig i2cfg1 = {
     OPMODE_I2C,
-    400000, //100000,
-    FAST_DUTY_CYCLE_2, //STD_DUTY_CYCLE, //FAST_DUTY_CYCLE_16_9,
+    400000,
+    FAST_DUTY_CYCLE_2,
 };
+/*
+static const I2CConfig i2cfg1 = {
+    OPMODE_I2C,
+    100000,
+    STD_DUTY_CYCLE
+};
+*/
 
 /*
  *******************************************************************************

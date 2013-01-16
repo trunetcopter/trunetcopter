@@ -33,7 +33,6 @@ extern AHRS_state_data gStateData;
 mavlinkStruct_t mavlinkData;
 mavlink_system_t mavlink_system;
 
-static Thread *IdleThread_p = NULL;
 static uint32_t last_idle_ticks = 0;
 
 Mailbox mbNotice;
@@ -120,12 +119,12 @@ systime_t GetTimeInterval(systime_t *last){
   return t;
 }
 
-uint16_t get_cpu_load(void){
+uint16_t get_cpu_load(Thread *idleThread){
 
   uint32_t i, s;
   systime_t ticks;
 
-  ticks = chThdGetTicks(IdleThread_p);
+  ticks = chThdGetTicks(idleThread);
 
   if (ticks >= last_idle_ticks)
     i = ticks - last_idle_ticks;
@@ -148,9 +147,10 @@ static msg_t ThreadMavlink(void *arg) {
 	unsigned long millis;
 	mavlinkNotice(MAV_SEVERITY_INFO, "MavLink Initialized!");
 
+	static Thread *IdleThread_p = NULL;
 	IdleThread_p = chSysGetIdleThread();
 
-        while (TRUE) {
+    while (TRUE) {
 		millis = chTimeNow();
 
 		// handle rollover
@@ -163,7 +163,7 @@ static msg_t ThreadMavlink(void *arg) {
 		// heartbeat
 		if (mavlinkData.nextHeartbeat < millis) {
 			mavlink_msg_heartbeat_send(MAVLINK_COMM_0, mavlink_system.type, MAV_AUTOPILOT_GENERIC_MISSION_FULL, mavlinkData.mode, mavlinkData.nav_mode, mavlinkData.status);
-			mavlink_msg_sys_status_send(MAVLINK_COMM_0, 0, 0, 0, get_cpu_load(), -1, -1, -1, 0, mavlinkData.packetDrops, 0, 0, 0, 0);
+			mavlink_msg_sys_status_send(MAVLINK_COMM_0, 0, 0, 0, get_cpu_load(IdleThread_p), -1, -1, -1, 0, mavlinkData.packetDrops, 0, 0, 0, 0);
 			mavlinkData.nextHeartbeat = millis + MAVLINK_HEARTBEAT_INTERVAL;
 		} else if ((mavlinkData.streamInterval[MAV_DATA_STREAM_ALL] || mavlinkData.streamInterval[MAV_DATA_STREAM_RC_CHANNELS]) && mavlinkData.streamNext[MAV_DATA_STREAM_RC_CHANNELS] < millis) {
 			mavlink_msg_rc_channels_raw_send(MAVLINK_COMM_0, millis, 0, RADIO_THROT+1024, RADIO_ROLL+1024, RADIO_PITCH+1024, RADIO_RUDD+1024, RADIO_GEAR+1024, RADIO_FLAPS+1024, RADIO_AUX2+1024, RADIO_AUX3+1024, RADIO_QUALITY);

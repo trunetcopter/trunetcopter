@@ -43,8 +43,8 @@ extern EventSource eventEKFDone;
  * This is a periodic thread that does absolutely nothing except flashing
  * a LED.
  */
-static WORKING_AREA(waThread1, 128);
-static msg_t Thread1(void *arg) {
+static WORKING_AREA(waThreadLed, 256);
+static msg_t ThreadLed(void *arg) {
 
 	(void) arg;
 	chRegSetThreadName("blinker");
@@ -120,9 +120,9 @@ int main(void) {
 	palSetPadMode(GPIOB, 3, PAL_MODE_OUTPUT_PUSHPULL); // BLUE
 	palSetPadMode(GPIOB, 4, PAL_MODE_OUTPUT_PUSHPULL); // GREEN
 	palSetPadMode(GPIOB, 5, PAL_MODE_OUTPUT_PUSHPULL); // RED
+	chThdCreateStatic(waThreadLed, sizeof(waThreadLed), NORMALPRIO, ThreadLed, NULL );
 
 	I2CInitLocal();
-
 	configInit();
 	mavlinkInit();
 	initSensors();
@@ -135,11 +135,6 @@ int main(void) {
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseInit(TIM5, &TIM_TimeBaseStructure);
 	TIM_Cmd(TIM5, ENABLE);
-
-	/*
-	 * Creates the example thread.
-	 */
-	chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL );
 
 	startEstimation();
 	startSensors();

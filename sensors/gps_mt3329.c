@@ -116,7 +116,7 @@ static msg_t PollGPSThread(void *arg){
 		chEvtWaitOneTimeout(EVENT_MASK(1), MS2ST(10));
 		flags = chEvtGetAndClearFlags(&elGps);
 
-		if (flags & CHN_INPUT_AVAILABLE) {
+		if (flags & (CHN_INPUT_AVAILABLE | SD_OVERRUN_ERROR)) {
 			while (c != Q_TIMEOUT) {
 				c = chnGetTimeout(&GPS_SERIAL_DEVICE, TIME_IMMEDIATE);
 				if ((ptr==0 && c==0xd0) || (ptr==1 && c==0xdd) || (ptr > 1 && ptr < 36))
@@ -129,7 +129,7 @@ static msg_t PollGPSThread(void *arg){
 				}
 			}
 		} else {
-			chThdSleepMilliseconds(10);
+			chThdSleepMilliseconds(1);
 		}
 	}
 	return 0;
@@ -138,8 +138,10 @@ static msg_t PollGPSThread(void *arg){
 void gps_mtk_start(void) {
 	uint8_t i;
 	const long baudrates[5] = {9600U, 19200U, 38400U, 57600U, 115200U};
+	bool_t found_baud_rate = 0;
 	
 	for (i=0; i<4; i++) {
+		chThdSleepMilliseconds(50);
 		const SerialConfig GPSPortConfig = {
 		    baudrates[i],
 		    0,
@@ -147,11 +149,12 @@ void gps_mtk_start(void) {
 		    0
 		};
 		sdStart(&GPS_SERIAL_DEVICE, &GPSPortConfig);
+		chThdSleepMilliseconds(50);
 
 		// initialize serial port for binary protocol use
 		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_SET_BINARY);
-		// set 5Hz update rate
-		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_OUTPUT_5HZ);
+		// set 4Hz update rate
+		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_OUTPUT_4HZ);
 		// set SBAS on
 		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, SBAS_ON);
 		// set WAAS on
@@ -159,18 +162,21 @@ void gps_mtk_start(void) {
 		// Set Nav Threshold to 0 m/s
 		chprintf((BaseSequentialStream *)&GPS_SERIAL_DEVICE, MTK_NAVTHRES_OFF);
 
-		int ptr = 0;
+		int32_t ptr = 0;
 		int32_t c = 0;
-		bool_t found_baud_rate = 0;
+		uint32_t counter = 0;
 		while (c != Q_TIMEOUT) {
 			c = chnGetTimeout(&GPS_SERIAL_DEVICE, MS2ST(100));
+			if (counter > 1000)
+				break;
 			if ((ptr==0 && c==0xd0) || (ptr==1 && c==0xdd))
-                        	ptr++;
-                        else if (ptr > 1) {
+                ptr++;
+            else if (ptr > 1) {
 				found_baud_rate = 1;
 				break;
-                        } else
+            } else
 				ptr = 0;
+			counter++;
 		}
 		if (found_baud_rate == 1)
 			break;
@@ -178,9 +184,15 @@ void gps_mtk_start(void) {
 		sdStop(&GPS_SERIAL_DEVICE);
 	}
 
-	chThdCreateStatic(PollGPSThreadWA,
-			sizeof(PollGPSThreadWA),
-			GPS_PRIORITY,
-			PollGPSThread,
-			NULL);
+	if (found_baud_rate == 1) {
+		mavlinkNotice(MAV_SEVERITY_INFO, "GPS Polling Initialized!");
+		chThdCreateStatic(PollGPSThreadWA,
+				sizeof(PollGPSThreadWA),
+				GPS_PRIORITY,
+				PollGPSThread,
+				NULL);
+	} else {
+		mavlinkNotice(MAV_SEVERITY_NOTICE, "GPS Not found!");
+	}
+
 }

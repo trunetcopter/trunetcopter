@@ -51,7 +51,7 @@ uint8_t count[2];
 /**
  * IMU Polling thread
  */
-static WORKING_AREA(PollIMUThreadWA, 512);
+static WORKING_AREA(PollIMUThreadWA, 1024);
 static msg_t PollIMUThread(void *arg){
 	(void)arg;
 	chRegSetThreadName("PollIMU");
